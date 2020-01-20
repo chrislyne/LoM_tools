@@ -39,14 +39,6 @@
 		],
 		"buttons": [
 			{
-				"icon":"icecream.svg",
-				"label":"icecream?",
-				"script":"Tools/toSlack.py",
-				"command":"import Tools.toSlack;toSlack.icecreamBot()",
-				"modules": ["Tools/__init__.py"],
-				"stp":"python"
-			},
-			{
 				"icon":"installToolbox.svg",
 				"label":"install or update toolbox",
 				"script":"installToolbox.mel",

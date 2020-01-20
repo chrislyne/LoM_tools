@@ -142,7 +142,7 @@ def AddIcons(shelfName,buttons):
 					shelfString = 'cmds.separator(style=\'shelf\',horizontal=0'
 				else:
 					#try to download file
-					downloadFile(('https://raw.githubusercontent.com/chrislyne/Toolbox/master/icons/'+ico), (localIconsPath+'/'+ico))
+					downloadFile(('https://raw.githubusercontent.com/chrislyne/LoM_tools/master/icons/'+ico), (localIconsPath+'/'+ico))
 					if ii == 0:
 						shelfString += ',i1=\''+ico+'\''  
 		except:
@@ -156,7 +156,7 @@ def AddIcons(shelfName,buttons):
 			try:
 				script = buttons[i]['script']
 
-				downloadFile(('https://raw.githubusercontent.com/chrislyne/Toolbox/master/'+script),(localScriptsPath+'/'+script))
+				downloadFile(('https://raw.githubusercontent.com/chrislyne/LoM_tools/master/'+script),(localScriptsPath+'/'+script))
 				#DownloadFile(('https://raw.githubusercontent.com/chrislyne/Toolbox/master/'+script),(localScriptsPath+'/'+fileName[-1]))
 			except:
 				print ('file not available')
@@ -166,7 +166,7 @@ def AddIcons(shelfName,buttons):
 				modules = buttons[i]['modules']
 				for mod in modules:
 
-					downloadFile(('https://raw.githubusercontent.com/chrislyne/Toolbox/master/'+mod),'%s/%s'%(localScriptsPath,mod))
+					downloadFile(('https://raw.githubusercontent.com/chrislyne/LoM_tools/master/'+mod),'%s/%s'%(localScriptsPath,mod))
 			except:
 				print ('file not available')
 		try:
