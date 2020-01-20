@@ -1,0 +1,58 @@
+{
+	"Quick Save":{
+		"dependencies":[
+		],
+		"buttons": [
+			{
+				"icon":"incrementalSave.svg",
+				"label":"Incremental Save",
+				"script":"Tools/incrementalSaveUI.py",
+				"modules": ["baseIO/incrementalSave.py","baseIO/IOuserPref.py"],
+				"command":"import Tools.incrementalSaveUI;from Tools.incrementalSaveUI import *;incrementalSaveUI()",
+				"stp":"python"
+			},
+			{
+				"icon":"separator"
+			}
+		]
+	},
+	"Island of Mystery":{
+		"dependencies":[
+		],
+		"buttons": [
+			{
+				"icon":"io_Llama.svg",
+				"label":"Publish Model",
+				"script":"Tools/incrementalSaveUI.py",
+				"modules": ["LlamaIO/LlamaUtil.py","baseIO/getProj.py"],
+				"command":"import IoM_publishModel;IoM_publishModel.IO_publishModel(0)",
+				"stp":"python"
+			},
+			{
+				"icon":"separator"
+			}
+		]
+	},
+	"Updates":{
+		"checkStatus":2,
+		"dependencies":[
+		],
+		"buttons": [
+			{
+				"icon":"icecream.svg",
+				"label":"icecream?",
+				"script":"Tools/toSlack.py",
+				"command":"import Tools.toSlack;toSlack.icecreamBot()",
+				"modules": ["Tools/__init__.py"],
+				"stp":"python"
+			},
+			{
+				"icon":"installToolbox.svg",
+				"label":"install or update toolbox",
+				"script":"installToolbox.mel",
+				"command":"source installToolbox;installToolbox;",
+				"stp":"mel"
+			}
+		]
+	}
+}

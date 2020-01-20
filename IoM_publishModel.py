@@ -8,8 +8,7 @@ from LlamaIO import addAttribute
 
 ###     EXPORTS     ###
 
-#export mb
-
+#export .fbx
 def makeFbx(refName,obj):
     #unparent rig and geo
     geo = '|%s|Geometry'%obj
@@ -37,18 +36,14 @@ def makeFbx(refName,obj):
 
     #export .fbx
     cmds.file(pathName,force=True,type='FBX export',pr=True,es=True)
-    #file -force -options "v=0;" -typ "FBX export" -pr -es "C:/Users/Chris/Dropbox/Jobs/LoM_Production/Unity/Assets/Models/Characters/conan_asset.fbx";
-
-    #reparent rig and geo
-    #cmds.parent(geo,obj)
-    #cmds.parent(bodyRig,'|%s|Main'%obj)
 
     #reselect initial selection
     cmds.select(obj,r=True)
 
+#export .ma
 def makeRef(refName,publishString):
     #define full file name
-    refFileName  = refName+'.mb'
+    refFileName  = refName+'.ma'
 
     #add attribute to node for re-publishing
     addAttribute(publishString,'publishName',refName)
@@ -76,7 +71,7 @@ def makeRef(refName,publishString):
         backupName = '%s/%s%d'%(backupFolder,refFileName,count)
         copyfile(pathName, backupName)
     #export .mb REF
-    cmds.file(pathName,force=True,type='mayaBinary',pr=True,es=True)
+    cmds.file(pathName,force=True,type='mayaAscii',pr=True,es=True)
     #log
     logOutput = []
     logOutput.append(pathName)
@@ -258,4 +253,7 @@ def IO_publishModel(silent):
 
         
 
-IO_publishModel(0) 
+#IO_publishModel(0) 
+
+#import IoM_publishModel
+#IoM_publishModel.IO_publishModel(0)
