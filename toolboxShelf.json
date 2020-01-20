@@ -24,8 +24,16 @@
 				"icon":"io_Llama.svg",
 				"label":"Publish Model",
 				"script":"Tools/incrementalSaveUI.py",
-				"modules": ["LlamaIO/LlamaUtil.py","baseIO/getProj.py"],
-				"command":"import IoM_publishModel;IoM_publishModel.IO_publishModel(0)",
+				"modules": ["LlamaIO/__init__.py","LlamaIO/LlamaUtil.py","baseIO/getProj.py"],
+				"command":"import IoM_publishModel;from IoM_publishModel import IO_publishModel_window;from IoM_publishModel import PublishModelCheckText;IoM_publishModel.IO_publishModel(0)",
+				"stp":"python"
+			},
+			{
+				"icon":"io_publishAnim.svg",
+				"label":"Publish Anim",
+				"script":"Tools/incrementalSaveUI.py",
+				"modules": ["baseIO/__init__.py","baseIO/sceneVar.py","baseIO/getProj.py"],
+				"command":"import IoM_publishModel;from IoM_publishModel import IO_publishModel_window;from IoM_publishModel import PublishModelCheckText;IoM_publishModel.IO_publishModel(0)",
 				"stp":"python"
 			},
 			{
