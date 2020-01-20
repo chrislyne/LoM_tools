@@ -33,7 +33,7 @@
 				"label":"Publish Anim",
 				"script":"Tools/incrementalSaveUI.py",
 				"modules": ["baseIO/__init__.py","baseIO/sceneVar.py","baseIO/getProj.py"],
-				"command":"import IoM_publishModel;from IoM_publishModel import IO_publishModel_window;from IoM_publishModel import PublishModelCheckText;IoM_publishModel.IO_publishModel(0)",
+				"command":"import IoM_publishAnim;IoM_publishAnim.prepFile()",
 				"stp":"python"
 			},
 			{

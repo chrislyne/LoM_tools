@@ -210,8 +210,8 @@ def CheckText():
 
 def FilterOutSystemPaths(path):
 	systemPath  = 0
-	if path[0] == '/':
-		systemPath = 1
+	#if path[0] == '/':
+	#	systemPath = 1
 	allparts = path.split('/')
 	for part in allparts:
 		if part == 'ProgramData' or  part == 'Program Files':
@@ -261,7 +261,11 @@ def installToolboxWindow():
 	scriptsMenu = cmds.optionMenu('scriptsMenu')
 	jsonPathText = cmds.textField('jsonPathText',ed=False,pht='path to json')
 	jsonPathBtn = cmds.button('jsonPathBtn',width=50,label='...',c='browseForFile()')
-	separator = ';' if cmds.about(nt=True) else ':'
+	separator = ';' 
+	if cmds.about(nt=True):
+		print 'its windows' 
+	else:
+		separator = ':' 
 	scriptsPaths = os.getenv('MAYA_SCRIPT_PATH')
 	allparts = scriptsPaths.split(separator)
 	for i, part in enumerate(allparts):
