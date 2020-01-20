@@ -23,8 +23,8 @@ def makeFbx(refName,obj):
     scenePath = cmds.file(q=True,sn=True)
     parentFolder = projPath.rsplit('/',2)[0]
     pathLen = len(projPath.split('/'))
-    remainingPath = scenePath.split('/',pathLen)[-1].rsplit('/',1)[0]
-
+    remainingPath = scenePath.split('/',pathLen)[-1].rsplit('/',2)[0]
+    print remainingPath
     
     #output name
     pathName = '%s/Unity/Assets/%s/%s'%(parentFolder,remainingPath,refFileName)
