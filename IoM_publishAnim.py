@@ -5,6 +5,7 @@ import maya.mel as mel
 import os
 import baseIO.loadSave as IO
 from shutil import copyfile
+import json
 
 def getParentFolder():
 	#get parent folder
@@ -95,6 +96,9 @@ def prepFile():
 
 	#revert to pre baked file
 	cmds.file(filename,open=True,force=True,iv=True)
+
+	#make new unity scene file
+	copyUnityScene()
 
 #prepFile()
 
