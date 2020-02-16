@@ -8,6 +8,15 @@ from LlamaIO import addAttribute
 
 ###     EXPORTS     ###
 
+def getParentFolder():
+    #get parent folder
+    projPath = getProj.getProject()
+    scenePath = cmds.file(q=True,sn=True)
+    parentFolder = projPath.rsplit('/',2)[0]
+    pathLen = len(projPath.split('/'))
+    remainingPath = scenePath.split('/',pathLen)[-1].rsplit('/',1)[0]
+    return parentFolder,remainingPath
+
 #export .fbx
 def makeFbx(refName,obj):
     #unparent rig and geo
@@ -19,15 +28,10 @@ def makeFbx(refName,obj):
     refFileName  = refName+'.fbx'
     
     #get parent folder
-    projPath = getProj.getProject()
-    scenePath = cmds.file(q=True,sn=True)
-    parentFolder = projPath.rsplit('/',2)[0]
-    pathLen = len(projPath.split('/'))
-    remainingPath = scenePath.split('/',pathLen)[-1].rsplit('/',2)[0]
-    print remainingPath
+    parentFolder,remainingPath = getParentFolder()
     
     #output name
-    pathName = '%s/Unity/Assets/%s/%s'%(parentFolder,remainingPath,refFileName)
+    pathName = '%s/Unity/Assets/Resources/%s/%s'%(parentFolder,remainingPath,refFileName)
     if not os.path.exists(pathName.rsplit('/',1)[0]):
         os.makedirs(pathName.rsplit('/',1)[0])
 
