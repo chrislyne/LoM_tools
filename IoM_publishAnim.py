@@ -21,8 +21,8 @@ def copyUnityScene():
 	parentFolder,remainingPath = getParentFolder()
 	filename = cmds.file(q=True,sn=True,shn=True)
 	#paths
-	unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplate.unity'%(parentFolder)
-	unitySceneFile = 'C:/Users/Chris/Dropbox/Jobs/LoM_Production/Unity/Assets/Scenes/%s/%s.unity'%(remainingPath,filename.split('.')[0])
+	unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplsate.unity'%(parentFolder)
+	unitySceneFile = '%s/Unity/Assets/Scenes/%s/%s.unity'%(parentFolder,remainingPath,filename.split('.')[0])
 	#make folder
 	folder = unitySceneFile.rsplit('/',1)[0]
 	if not os.path.exists(folder):
