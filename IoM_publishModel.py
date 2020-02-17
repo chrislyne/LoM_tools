@@ -13,8 +13,9 @@ def getParentFolder():
     projPath = getProj.getProject()
     scenePath = cmds.file(q=True,sn=True)
     parentFolder = projPath.rsplit('/',2)[0]
-    pathLen = len(projPath.split('/'))
+    pathLen = len(projPath.split('/'))+1
     remainingPath = scenePath.split('/',pathLen)[-1].rsplit('/',1)[0]
+    print remainingPath
     return parentFolder,remainingPath
 
 #export .fbx
@@ -31,7 +32,7 @@ def makeFbx(refName,obj):
     parentFolder,remainingPath = getParentFolder()
     
     #output name
-    pathName = '%s/Unity/Assets/Resources/%s/%s'%(parentFolder,remainingPath,refFileName)
+    pathName = '%s/Unity/Assets/Resources/%s/%s'%(parentFolder,remainingPath.rsplit('/',1)[0],refFileName)
     if not os.path.exists(pathName.rsplit('/',1)[0]):
         os.makedirs(pathName.rsplit('/',1)[0])
 
