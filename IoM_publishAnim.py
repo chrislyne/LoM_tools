@@ -34,7 +34,10 @@ def copyUnityScene():
 def exportAnimation(obj):
 	#rename file temporarily
 	filename = cmds.file(q=True,sn=True)
-	objName = obj.split('|')[-1].split(':')[-1]
+	try:
+		objName = obj.split('|')[1].split(':')[-1]
+	except:
+		objName = obj.split('|')[-1].split(':')[-1]
 	newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
 	cmds.file(rename=newName)
 
@@ -61,7 +64,10 @@ def exportAnimation(obj):
 	#export fbx
 	cmds.file(pathName,force=True,type='FBX export',relativeNamespace=ns,es=True)
 
+	cmds.file(rename=filename)
+
 	return newName,remainingPath
+
 
 def prepFile():
 	#save scene
@@ -72,11 +78,19 @@ def prepFile():
 	endFrame = sceneVar.getEndFrame()
 
 	#find the deformation system
-	sel = cmds.ls(sl=True)
+	sel = []
+	checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
+	for c in checkBoxes:
+		print cmds.checkBox(c,label=True, q=True) 
+		sel.append(cmds.checkBox(c,label=True, q=True) )
+	#sel = cmds.ls(sl=True)
 
 	rigNodes = []
 	for obj in sel:
 		rigNodes.append('|%s|*:DeformationSystem'%obj)
+
+	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
+	rigNodes.append('|%s'%cameraName)
 
 	cmds.select(rigNodes,r=True)
 
@@ -86,18 +100,19 @@ def prepFile():
 	#start dictionary
 	sceneDict = {"characters": []}
 
-	publishCamera()
+	#publishCamera()
 
 	for obj in rigNodes:
-		#objName = obj.split('|')[1].split(':')[-1]
-		#newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
-		#cmds.file(rename=newName)
 		newName,remainingPath = exportAnimation(obj)
 
 		#character dictionary
-		objParent = cmds.listRelatives( obj, parent=True )
-		publishName = cmds.getAttr('%s.publishName'%objParent[0])
-		charDict = {"name":  newName.split('_')[-1],"model": "Characters/%s"%publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
+		try:
+			objParent = cmds.listRelatives( obj, parent=True )
+			publishName = cmds.getAttr('%s.publishName'%objParent[0])
+			publishName = "Characters/%s"%publishName
+		except:
+			publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
+		charDict = {"name":  newName.split('_')[-1],"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 		sceneDict["characters"].append(charDict)
 
 	#write json file
@@ -112,23 +127,6 @@ def prepFile():
 
 	#make new unity scene file
 	copyUnityScene()
-
-#publish camera
-def publishCamera():
-    #get workspace
-    workspace = cmds.workspace( q=True, directory=True, rd=True)
-    workspaceLen = len(workspace.split('/'))
-    #get filename
-    filename = cmds.file(q=True,sn=True)
-    #get relative path (from scenes)
-    relativePath = ''
-    for dir in filename.split('/')[workspaceLen:-1]:
-        relativePath += '%s/'%(dir)
-    cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
-    newName,remainingPath = exportAnimation(cameraName)
-
-    #revert to pre baked file
-    #cmds.file(filename,open=True,force=True,iv=True)
     
 
 #list cameras
@@ -158,6 +156,14 @@ def runWithUI():
 
 def LoM_exportAnim_window():
 
+    #find all published objects by searching for the 'publishName' attribute
+
+    publishedAssets = []
+    allTransforms = cmds.ls(transforms=True)
+    for t in allTransforms:
+        if cmds.attributeQuery( 'publishName', node=t, exists=True):
+            publishedAssets.append(t)
+
     exportForm = cmds.formLayout()
     cameraLabel = cmds.text('cameraLabel',label='Camera')
     
@@ -165,6 +171,12 @@ def LoM_exportAnim_window():
     cameraSelection = cmds.optionMenu('cameraSelection')
     for cam in allCameras:
         cmds.menuItem(l=cam)
+
+    boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
+    for asset in publishedAssets:
+    	cmds.checkBox( label=asset, v=True)
+    
+    cmds.setParent( '..' )
     
     Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile()')
     Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Camera\')') 
@@ -185,6 +197,8 @@ def LoM_exportAnim_window():
         ],
         attachControl=[
         (cameraSelection,'left',40,cameraLabel),
+        (boxLayout,'top',20,cameraLabel),
+        (boxLayout,'left',40,cameraLabel),
         (Button2,'left',0,Button1)
         ],
         attachPosition=[
