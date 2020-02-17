@@ -84,7 +84,8 @@ def prepFile():
 		remainingPath = exportAnimation(obj,newName)
 
 		#character dictionary
-		charDict = {"name":  newName.split('_')[-1],"model": "Characters/%s"%obj.split(':')[0].replace('|',''),"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
+		publishName = cmds.getAttr('%s.publishName'%obj)
+		charDict = {"name":  newName.split('_')[-1],"model": "Characters/%s"%publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 		sceneDict["characters"].append(charDict)
 
 	#write json file
