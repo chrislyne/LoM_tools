@@ -84,7 +84,8 @@ def prepFile():
 		remainingPath = exportAnimation(obj,newName)
 
 		#character dictionary
-		publishName = cmds.getAttr('%s.publishName'%obj)
+		objParent = cmds.listRelatives( obj, parent=True )
+		publishName = cmds.getAttr('%s.publishName'%objParent[0])
 		charDict = {"name":  newName.split('_')[-1],"model": "Characters/%s"%publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 		sceneDict["characters"].append(charDict)
 
