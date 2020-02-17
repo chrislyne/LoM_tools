@@ -31,14 +31,23 @@ def copyUnityScene():
 	copyfile(unityTemplateFile, unitySceneFile)
 
 #export fbx
-def exportAnimation(obj,filename):
+def exportAnimation(obj):
+	#rename file temporarily
+	filename = cmds.file(q=True,sn=True)
+	objName = obj.split('|')[-1].split(':')[-1]
+	newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
+	cmds.file(rename=newName)
+
 	#select object to export
 	cmds.select(obj,r=True)
 	#define full file name
-	ns = obj.split(':')[0]
-	ns = ns.replace('|',':')
+	if ':' in obj:
+		ns = obj.split(':')[0]
+		ns = ns.replace('|',':')
+	else:
+		ns = ':'
 	
-	refFileName  = ('%s.fbx'%(filename.rsplit('/',1)[-1].split('.')[0]))
+	refFileName  = ('%s.fbx'%(newName.rsplit('/',1)[-1].split('.')[0]))
 
 	#output name
 	parentFolder,remainingPath = getParentFolder()
@@ -52,7 +61,7 @@ def exportAnimation(obj,filename):
 	#export fbx
 	cmds.file(pathName,force=True,type='FBX export',relativeNamespace=ns,es=True)
 
-	return remainingPath
+	return newName,remainingPath
 
 def prepFile():
 	#save scene
@@ -77,11 +86,13 @@ def prepFile():
 	#start dictionary
 	sceneDict = {"characters": []}
 
+	publishCamera()
+
 	for obj in rigNodes:
-		objName = obj.split('|')[1].split(':')[-1]
-		newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
-		cmds.file(rename=newName)
-		remainingPath = exportAnimation(obj,newName)
+		#objName = obj.split('|')[1].split(':')[-1]
+		#newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
+		#cmds.file(rename=newName)
+		newName,remainingPath = exportAnimation(obj)
 
 		#character dictionary
 		objParent = cmds.listRelatives( obj, parent=True )
@@ -102,6 +113,97 @@ def prepFile():
 	#make new unity scene file
 	copyUnityScene()
 
+#publish camera
+def publishCamera():
+    #get workspace
+    workspace = cmds.workspace( q=True, directory=True, rd=True)
+    workspaceLen = len(workspace.split('/'))
+    #get filename
+    filename = cmds.file(q=True,sn=True)
+    #get relative path (from scenes)
+    relativePath = ''
+    for dir in filename.split('/')[workspaceLen:-1]:
+        relativePath += '%s/'%(dir)
+    cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
+    newName,remainingPath = exportAnimation(cameraName)
+
+    #revert to pre baked file
+    #cmds.file(filename,open=True,force=True,iv=True)
+    
+
+#list cameras
+def listAllCameras():
+    listAllCameras = cmds.listCameras(p=True)
+    #remove 'persp' camera
+    if 'persp' in listAllCameras: listAllCameras.remove('persp')
+    return listAllCameras
+
+#create file name for export camera
+def makeCameraName():
+    filename = cmds.file(q=True,sn=True,shn=True).split('.')[0]
+    camFileName = filename+'_CAMERA'
+    return camFileName
+
+
+#update name and run
+def runWithUI():
+    selectionCamera = cmds.optionMenu('cameraSelection',q=True,v=True)
+    #check if a camera is selected and run
+    if selectionCamera != '':
+        publishCamera()
+    else:
+        cmds.error( 'no valid camera in scene')
+
+###        UI        ###
+
+def LoM_exportAnim_window():
+
+    exportForm = cmds.formLayout()
+    cameraLabel = cmds.text('cameraLabel',label='Camera')
+    
+    allCameras = listAllCameras()
+    cameraSelection = cmds.optionMenu('cameraSelection')
+    for cam in allCameras:
+        cmds.menuItem(l=cam)
+    
+    Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile()')
+    Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Camera\')') 
+             
+    cmds.formLayout(
+        exportForm,
+        edit=True,
+        attachForm=[
+        (cameraLabel,'top',20),
+        (cameraSelection,'top',15),
+        (cameraSelection,'right',10),
+        (cameraLabel,'left',10),
+        (cameraSelection,'right',10),
+        (Button1,'bottom',0),
+        (Button1,'left',0),
+        (Button2,'bottom',0),
+        (Button2,'right',0)
+        ],
+        attachControl=[
+        (cameraSelection,'left',40,cameraLabel),
+        (Button2,'left',0,Button1)
+        ],
+        attachPosition=[
+        (Button1,'right',0,50)
+        ])
+
+    exportForm
+    
+    #get filename
+    filename = makeCameraName()
+
+def IoM_exportAnim():
+
+    workspaceName = 'Publish Camera'
+    if(cmds.workspaceControl(workspaceName, exists=True)):
+        cmds.deleteUI(workspaceName)
+    cmds.workspaceControl(workspaceName,initialHeight=100,initialWidth=300,uiScript = 'LoM_exportAnim_window()')
+
+#IoM_exportAnim()
 #prepFile()
 
 #import IoM_publishAnim
