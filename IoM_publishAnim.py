@@ -26,7 +26,7 @@ def copyUnityScene():
 	#make folder
 	folder = unitySceneFile.rsplit('/',1)[0]
 	if not os.path.exists(folder):
-	    os.makedirs(folder)
+		os.makedirs(folder)
 	#copy file
 	copyfile(unityTemplateFile, unitySceneFile)
 
@@ -34,36 +34,29 @@ def copyUnityScene():
 def exportAnimation(obj):
 	#rename file temporarily
 	filename = cmds.file(q=True,sn=True)
-	try:
-		objName = obj.split('|')[1].split(':')[-1]
-	except:
-		objName = obj.split('|')[-1].split(':')[-1]
+	objName = obj.split('|')[-1].split(':')[-1]
 	newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
 	cmds.file(rename=newName)
-
-	objParent = cmds.listRelatives(parent=True,f=True)[0][1:]
-	print 'objParent'
-	print objParent
-
+	#move object to the root and redefine as itself if it's not already
 	try:
-		unparented = cmds.parent(objParent,w=True)
-
-		obj = '%s|*:DeformationSystem'%(unparented[0])
+		obj = cmds.parent(obj,w=True)[0]
 	except:
 		pass
 
 	#select object to export
-	cmds.select(obj,r=True)
+	try:
+		exportObject = '%s|*:DeformationSystem'%(obj)
+		cmds.select(exportObject,r=True)
+	except:
+		exportObject = obj
+		cmds.select(exportObject,r=True)
 	#define full file name
-	print obj
-	if ':' in obj:
-		ns = obj.split(':',1)[0]
+	if ':' in exportObject:
+		ns = exportObject.split(':',1)[0]
 		ns = ns.split('|')[-1]
 		ns = ':%s'%ns
 	else:
 		ns = ':'
-	print 'ns is '
-	print ns
 	refFileName  = ('%s.fbx'%(newName.rsplit('/',1)[-1].split('.')[0]))
 
 	#output name
@@ -77,13 +70,13 @@ def exportAnimation(obj):
 	mel.eval("FBXLoadExportPresetFile -f \"%s/data/IoM_animExport.fbxexportpreset\";"%getProj.getProject())
 	#export fbx
 	cmds.file(pathName,force=True,type='FBX export',relativeNamespace=ns,es=True)
-
+	#restore the filename
 	cmds.file(rename=filename)
 
-	return newName,remainingPath
+	return obj,newName,remainingPath
 
 
-def prepFile():
+def prepFile(assetObject):
 	#save scene
 	filename = cmds.file(save=True)
 
@@ -91,56 +84,47 @@ def prepFile():
 	startFrame = sceneVar.getStartFrame()
 	endFrame = sceneVar.getEndFrame()
 
-	#find the deformation system
+	#add objects to selection if if they are checked
 	sel = []
 	checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
-	for c in checkBoxes:
+	for i,c in enumerate(checkBoxes):
 		if cmds.checkBox(c,v=True, q=True):
-			print cmds.checkBox(c,label=True, q=True) 
-			sel.append(cmds.checkBox(c,label=True, q=True) )
-	#sel = cmds.ls(sl=True)
+			sel.append(assetObject[i])
 
-	rigNodes = []
-	for obj in sel:
-		rigNodes.append('|%s|*:DeformationSystem'%obj)
-
+	#add scene camera to export list
 	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
-	rigNodes.append('|%s'%cameraName)
-
-	cmds.select(rigNodes,r=True)
+	if cameraName:
+		sel.append('|%s'%cameraName)
 
 	#bake keys
-	cmds.bakeResults(rigNodes,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
+	cmds.bakeResults(sel,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
 
 	#start dictionary
 	sceneDict = {"characters": []}
-
-	#publishCamera()
-
-	for obj in rigNodes:
-		newName,remainingPath = exportAnimation(obj)
-
-		#character dictionary
+	#export animation one object at a time
+	for obj in sel:
+		#do the export
+		obj,newName,remainingPath = exportAnimation(obj)
+		#make character dictionary
 		try:
 			#get REF filename
-			objParent = cmds.listRelatives( obj, parent=True )
-			publishName = cmds.getAttr('%s.publishName'%objParent[0])
+			publishName = cmds.getAttr('%s.publishName'%obj)
 			#get asset type from parent folder
 			refPath = cmds.referenceQuery( obj,filename=True )
 			assetType = os.path.split(os.path.dirname(refPath))[1]
 			publishName = "%s/%s"%(assetType,publishName)
 		except:
+			#make a name if publishName attribute doesn't exist
 			publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
+		#format json
 		charDict = {"name":  newName.split('_')[-1],"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 		sceneDict["characters"].append(charDict)
-
 	#write json file
 	jsonFileName  = ('%s.json'%(filename.rsplit('/',1)[-1].split('.')[0]))
 	parentFolder,remainingPath = getParentFolder()
 	pathName = '%s/Unity/Assets/Resources/json/%s'%(parentFolder,jsonFileName)
 	with open(pathName, mode='w') as feedsjson:
 		json.dump(sceneDict, feedsjson, indent=4, sort_keys=True)
-
 
 	#revert to pre baked file
 	try:
@@ -151,100 +135,77 @@ def prepFile():
 	#make new unity scene file
 	copyUnityScene()
 
-	
-    
-
 #list cameras
 def listAllCameras():
-    listAllCameras = cmds.listCameras(p=True)
-    #remove 'persp' camera
-    if 'persp' in listAllCameras: listAllCameras.remove('persp')
-    return listAllCameras
-
-#create file name for export camera
-def makeCameraName():
-    filename = cmds.file(q=True,sn=True,shn=True).split('.')[0]
-    camFileName = filename+'_CAMERA'
-    return camFileName
+	listAllCameras = cmds.listCameras(p=True)
+	#remove 'persp' camera
+	if 'persp' in listAllCameras: listAllCameras.remove('persp')
+	return listAllCameras
 
 
-#update name and run
-def runWithUI():
-    selectionCamera = cmds.optionMenu('cameraSelection',q=True,v=True)
-    #check if a camera is selected and run
-    if selectionCamera != '':
-        publishCamera()
-    else:
-        cmds.error( 'no valid camera in scene')
-
-###        UI        ###
+###		UI		###
 
 def IoM_exportAnim_window():
 
-    #find all published objects by searching for the 'publishName' attribute
+	#find all published objects by searching for the 'publishName' attribute
 
-    publishedAssets = []
-    allTransforms = cmds.ls(transforms=True,l=True)
-    for t in allTransforms:
-    	t=t[1:]
-        if cmds.attributeQuery( 'publishName', node=t, exists=True):
-            publishedAssets.append(t)
+	publishedAssets = []
+	allTransforms = cmds.ls(transforms=True,l=True)
+	for t in allTransforms:
+		t=t[1:]
+		if cmds.attributeQuery( 'publishName', node=t, exists=True):
+			publishedAssets.append(t)
 
-    exportForm = cmds.formLayout()
-    cameraLabel = cmds.text('cameraLabel',label='Camera')
-    
-    allCameras = listAllCameras()
-    cameraSelection = cmds.optionMenu('cameraSelection')
-    for cam in allCameras:
-        cmds.menuItem(l=cam)
+	exportForm = cmds.formLayout()
+	cameraLabel = cmds.text('cameraLabel',label='Camera')
+	
+	allCameras = listAllCameras()
+	cameraSelection = cmds.optionMenu('cameraSelection')
+	for cam in allCameras:
+		cmds.menuItem(l=cam)
+	#checkBoxes
+	publishedAsset = []
+	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
+	for asset in publishedAssets:
+		publishedAsset.append(asset)
+		cmds.checkBox( label=asset.split(':')[-1], annotation=asset,v=True)
+	
+	cmds.setParent( '..' )
+	
+	Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile(%s)'%publishedAsset)
+	Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Camera\')') 
+			 
+	cmds.formLayout(
+		exportForm,
+		edit=True,
+		attachForm=[
+		(cameraLabel,'top',20),
+		(cameraSelection,'top',15),
+		(cameraSelection,'right',10),
+		(cameraLabel,'left',10),
+		(cameraSelection,'right',10),
+		(Button1,'bottom',0),
+		(Button1,'left',0),
+		(Button2,'bottom',0),
+		(Button2,'right',0)
+		],
+		attachControl=[
+		(cameraSelection,'left',40,cameraLabel),
+		(boxLayout,'top',20,cameraLabel),
+		(boxLayout,'left',40,cameraLabel),
+		(Button2,'left',0,Button1)
+		],
+		attachPosition=[
+		(Button1,'right',0,50)
+		])
 
-    boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
-    for asset in publishedAssets:
-    	cmds.checkBox( label=asset, v=True)
-    
-    cmds.setParent( '..' )
-    
-    Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile()')
-    Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Camera\')') 
-             
-    cmds.formLayout(
-        exportForm,
-        edit=True,
-        attachForm=[
-        (cameraLabel,'top',20),
-        (cameraSelection,'top',15),
-        (cameraSelection,'right',10),
-        (cameraLabel,'left',10),
-        (cameraSelection,'right',10),
-        (Button1,'bottom',0),
-        (Button1,'left',0),
-        (Button2,'bottom',0),
-        (Button2,'right',0)
-        ],
-        attachControl=[
-        (cameraSelection,'left',40,cameraLabel),
-        (boxLayout,'top',20,cameraLabel),
-        (boxLayout,'left',40,cameraLabel),
-        (Button2,'left',0,Button1)
-        ],
-        attachPosition=[
-        (Button1,'right',0,50)
-        ])
-
-    exportForm
-    
-    #get filename
-    filename = makeCameraName()
+	exportForm
 
 def IoM_exportAnim():
 
-    workspaceName = 'Publish Camera'
-    if(cmds.workspaceControl(workspaceName, exists=True)):
-        cmds.deleteUI(workspaceName)
-    cmds.workspaceControl(workspaceName,initialHeight=100,initialWidth=300,uiScript = 'IoM_exportAnim_window()')
+	workspaceName = 'Publish Camera'
+	if(cmds.workspaceControl(workspaceName, exists=True)):
+		cmds.deleteUI(workspaceName)
+	cmds.workspaceControl(workspaceName,initialHeight=100,initialWidth=300,uiScript = 'IoM_exportAnim_window()')
 
 #IoM_exportAnim()
-#prepFile()
-
-#import IoM_publishAnim
-#IoM_publishAnim.prepFile()
