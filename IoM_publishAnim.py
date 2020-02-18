@@ -41,15 +41,29 @@ def exportAnimation(obj):
 	newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
 	cmds.file(rename=newName)
 
+	objParent = cmds.listRelatives(parent=True,f=True)[0][1:]
+	print 'objParent'
+	print objParent
+
+	try:
+		unparented = cmds.parent(objParent,w=True)
+
+		obj = '%s|*:DeformationSystem'%(unparented[0])
+	except:
+		pass
+
 	#select object to export
 	cmds.select(obj,r=True)
 	#define full file name
+	print obj
 	if ':' in obj:
-		ns = obj.split(':')[0]
-		ns = ns.replace('|',':')
+		ns = obj.split(':',1)[0]
+		ns = ns.split('|')[-1]
+		ns = ':%s'%ns
 	else:
 		ns = ':'
-	
+	print 'ns is '
+	print ns
 	refFileName  = ('%s.fbx'%(newName.rsplit('/',1)[-1].split('.')[0]))
 
 	#output name
@@ -170,8 +184,9 @@ def IoM_exportAnim_window():
     #find all published objects by searching for the 'publishName' attribute
 
     publishedAssets = []
-    allTransforms = cmds.ls(transforms=True)
+    allTransforms = cmds.ls(transforms=True,l=True)
     for t in allTransforms:
+    	t=t[1:]
         if cmds.attributeQuery( 'publishName', node=t, exists=True):
             publishedAssets.append(t)
 
