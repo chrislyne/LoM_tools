@@ -21,7 +21,7 @@ def copyUnityScene():
 	parentFolder,remainingPath = getParentFolder()
 	filename = cmds.file(q=True,sn=True,shn=True)
 	#paths
-	unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplsate.unity'%(parentFolder)
+	unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplate.unity'%(parentFolder)
 	unitySceneFile = '%s/Unity/Assets/Scenes/%s/%s.unity'%(parentFolder,remainingPath,filename.split('.')[0])
 	#make folder
 	folder = unitySceneFile.rsplit('/',1)[0]
@@ -81,8 +81,9 @@ def prepFile():
 	sel = []
 	checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
 	for c in checkBoxes:
-		print cmds.checkBox(c,label=True, q=True) 
-		sel.append(cmds.checkBox(c,label=True, q=True) )
+		if cmds.checkBox(c,v=True, q=True):
+			print cmds.checkBox(c,label=True, q=True) 
+			sel.append(cmds.checkBox(c,label=True, q=True) )
 	#sel = cmds.ls(sl=True)
 
 	rigNodes = []
@@ -122,11 +123,17 @@ def prepFile():
 	with open(pathName, mode='w') as feedsjson:
 		json.dump(sceneDict, feedsjson, indent=4, sort_keys=True)
 
+
 	#revert to pre baked file
-	cmds.file(filename,open=True,force=True,iv=True)
+	try:
+		cmds.file(filename,open=True,force=True,iv=True)
+	except:
+		pass
 
 	#make new unity scene file
 	copyUnityScene()
+
+	
     
 
 #list cameras
@@ -154,7 +161,7 @@ def runWithUI():
 
 ###        UI        ###
 
-def LoM_exportAnim_window():
+def IoM_exportAnim_window():
 
     #find all published objects by searching for the 'publishName' attribute
 
@@ -215,7 +222,7 @@ def IoM_exportAnim():
     workspaceName = 'Publish Camera'
     if(cmds.workspaceControl(workspaceName, exists=True)):
         cmds.deleteUI(workspaceName)
-    cmds.workspaceControl(workspaceName,initialHeight=100,initialWidth=300,uiScript = 'LoM_exportAnim_window()')
+    cmds.workspaceControl(workspaceName,initialHeight=100,initialWidth=300,uiScript = 'IoM_exportAnim_window()')
 
 #IoM_exportAnim()
 #prepFile()
