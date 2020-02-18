@@ -144,7 +144,6 @@ def listAllCameras():
 
 
 ###		UI		###
-
 def IoM_exportAnim_window():
 
 	#find all published objects by searching for the 'publishName' attribute

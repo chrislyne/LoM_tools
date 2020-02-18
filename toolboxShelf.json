@@ -1,39 +1,22 @@
 {
-	"Quick Save":{
-		"dependencies":[
-		],
-		"buttons": [
-			{
-				"icon":"incrementalSave.svg",
-				"label":"Incremental Save",
-				"script":"Tools/incrementalSaveUI.py",
-				"modules": ["baseIO/incrementalSave.py","baseIO/IOuserPref.py"],
-				"command":"import Tools.incrementalSaveUI;from Tools.incrementalSaveUI import *;incrementalSaveUI()",
-				"stp":"python"
-			},
-			{
-				"icon":"separator"
-			}
-		]
-	},
 	"Island of Mystery":{
 		"dependencies":[
 		],
 		"buttons": [
 			{
-				"icon":"io_Llama.svg",
+				"icon":"IoM_publishModel.svg",
 				"label":"Publish Model",
-				"script":"Tools/incrementalSaveUI.py",
+				"script":"Tools/IoM_publishModel.py",
 				"modules": ["LlamaIO/__init__.py","LlamaIO/LlamaUtil.py","baseIO/getProj.py"],
 				"command":"import IoM_publishModel;from IoM_publishModel import IO_publishModel_window;from IoM_publishModel import PublishModelCheckText;IoM_publishModel.IO_publishModel(0)",
 				"stp":"python"
 			},
 			{
-				"icon":"io_publishAnim.svg",
+				"icon":"IoM_publishAnim.svg",
 				"label":"Publish Anim",
-				"script":"Tools/incrementalSaveUI.py",
+				"script":"Tools/IoM_publishAnim.py",
 				"modules": ["baseIO/__init__.py","baseIO/sceneVar.py","baseIO/getProj.py"],
-				"command":"import IoM_publishAnim;IoM_publishAnim.prepFile()",
+				"command":"import IoM_publishAnim;from IoM_publishAnim import IoM_exportAnim_window,prepFile;IoM_publishAnim.IoM_exportAnim()",
 				"stp":"python"
 			},
 			{
