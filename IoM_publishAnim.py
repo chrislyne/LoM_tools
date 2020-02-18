@@ -108,9 +108,13 @@ def prepFile():
 
 		#character dictionary
 		try:
+			#get REF filename
 			objParent = cmds.listRelatives( obj, parent=True )
 			publishName = cmds.getAttr('%s.publishName'%objParent[0])
-			publishName = "Characters/%s"%publishName
+			#get asset type from parent folder
+			refPath = cmds.referenceQuery( obj,filename=True )
+			assetType = os.path.split(os.path.dirname(refPath))[1]
+			publishName = "%s/%s"%(assetType,publishName)
 		except:
 			publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
 		charDict = {"name":  newName.split('_')[-1],"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
