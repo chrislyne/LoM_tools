@@ -6,6 +6,8 @@ import os
 import baseIO.loadSave as IO
 from shutil import copyfile
 import json
+import platform
+import subprocess
 
 def exportAsAlembic(abcFilename):
 
@@ -79,11 +81,22 @@ def copyUnityScene():
 	unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplate.unity'%(parentFolder)
 	unitySceneFile = '%s/Unity/Assets/Scenes/%s/%s.unity'%(parentFolder,remainingPath,filename.split('.')[0])
 	#make folder
+	print "parentFolder = %s/Unity"%parentFolder
+	print "remainingPath = Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
+	print "filename.split('.')[0] = %s"%filename.split('.')[0]
 	folder = unitySceneFile.rsplit('/',1)[0]
 	if not os.path.exists(folder):
 		os.makedirs(folder)
 	#copy file
-	copyfile(unityTemplateFile, unitySceneFile)
+	#copyfile(unityTemplateFile, unitySceneFile)
+	#make Unity Scene File
+	projectPath = "%s/Unity"%parentFolder
+	scenePath = "Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
+	shotName = "%s"%filename.split('.')[0]
+	if platform.system() == "Windows":
+	    subprocess.check_output('\"C:/Program Files/Unity/Hub/Editor/2019.2.19f1/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath))
+	else:
+	    subprocess.check_output('/Applications/Unity/Hub/Editor/2019.2.19f1/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath),shell=True)
 
 #export fbx
 def exportAnimation(obj):
