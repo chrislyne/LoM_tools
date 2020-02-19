@@ -58,10 +58,7 @@ def exportAsAlembic(abcFilename):
 		#write to disk
 		cmds.AbcExport ( j=command )
 
-		print "parentFolder = %s"%parentFolder
-		print "remainingPath = %s"%remainingPath
-
-		returnString = "%s/%s_cache"%(folderPath,abcFilename)
+		returnString = "%s/%s_cache"%(remainingPath,abcFilename)
 	
 	return returnString
 
