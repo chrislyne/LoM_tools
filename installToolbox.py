@@ -204,7 +204,7 @@ def AddIcons(shelfName,buttons):
 	
 def CheckText():
 
-	shelfName = cmds.textField('nameText',q=True,text=True)
+	shelfName = cmds.textField('shelfNameText',q=True,text=True)
 
 	checkGroups(shelfName)
 
@@ -257,7 +257,7 @@ def updateGrpCheckboxes():
 def installToolboxWindow():
 	installForm = cmds.formLayout()
 	textLabel = cmds.text(label='Shelf')
-	nameText = cmds.textField('nameText',width=200,tx='Custom')
+	shelfNameText = cmds.textField('shelfNameText',width=200,tx='Custom')
 	scriptsMenu = cmds.optionMenu('scriptsMenu')
 	jsonPathText = cmds.textField('jsonPathText',ed=False,pht='path to json')
 	jsonPathBtn = cmds.button('jsonPathBtn',width=50,label='...',c='browseForFile()')
@@ -321,8 +321,8 @@ def installToolboxWindow():
 					 attachForm=[
 					 (textLabel, 'top', 15),
 					 (textLabel, 'left', 10),
-					 (nameText, 'top', 10),
-					 (nameText, 'right', 10),
+					 (shelfNameText, 'top', 10),
+					 (shelfNameText, 'right', 10),
 					 (scriptsMenu, 'right', 10),
 					 (iconsMenu, 'right', 10),
 					 (jsonPathBtn, 'right', 10),
@@ -334,7 +334,7 @@ def installToolboxWindow():
 					 (btn2, 'right', 0)
 					 ],
 					 attachControl=[
-					 (nameText, 'left', 10,textLabel),
+					 (shelfNameText, 'left', 10,textLabel),
 					 (scriptsMenu, 'top', 10,textLabel),
 					 (scriptsMenu, 'left', 10,textLabel),
 					 (iconsMenu, 'top', 10,scriptsMenu),
@@ -361,7 +361,7 @@ def installToolboxWindow():
 	
 	#set text
 	selectionString = (names[shelfIndex-1])
-	cmds.textField(nameText,edit=True,tx=selectionString)
+	cmds.textField(shelfNameText,edit=True,tx=selectionString)
 
 
 def toolbox_install():

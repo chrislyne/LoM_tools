@@ -7,6 +7,64 @@ import baseIO.loadSave as IO
 from shutil import copyfile
 import json
 
+def exportAsAlembic(abcFilename):
+
+	#get file/folder path
+	parentFolder,remainingPath = getParentFolder()
+
+	#get workspace
+	workspace = cmds.workspace( q=True, directory=True, rd=True)
+	workspaceLen = len(workspace.split('/'))
+	#get filename
+	filename = cmds.file(q=True,sn=True)
+	#get relative path (from scenes)
+	relativePath = ''
+	for dir in filename.split('/')[workspaceLen:-1]:
+		relativePath += '%s/'%(dir)
+
+	#string of objects to export
+	exportString = ''
+	returnString = ''
+	sel = cmds.textScrollList('extrasList',q=True,allItems=True)
+	if sel:
+		for item in sel:
+			exportString += ' -root %s'%(item)
+
+		#get timeline
+		startFrame = int(cmds.playbackOptions(q=True,minTime=True))
+		endFrame = int(cmds.playbackOptions(q=True,maxTime=True))
+
+		#set folder to export to  
+		folderPath = '%s/Unity/Assets/Resources/%s'%(parentFolder,remainingPath)
+		if not os.path.exists(folderPath):
+			os.makedirs(folderPath)
+
+		#check if plugin is already loaded
+		if not cmds.pluginInfo('AbcImport',query=True,loaded=True):
+			try:
+				#load abcExport plugin
+				cmds.loadPlugin( 'AbcImport' )
+			except: 
+				cmds.error('Could not load AbcImport plugin')
+
+		#export .abc
+		command = '-frameRange %d %d -uvWrite -writeVisibility -wholeFrameGeo -worldSpace -writeUVSets -dataFormat ogawa%s -file \"%s/%s_cache.abc\"'%(startFrame,endFrame,exportString,folderPath,abcFilename)
+		#load plugin
+		if not cmds.pluginInfo('AbcExport',query=True,loaded=True):
+			try:
+				#load abcExport plugin
+				cmds.loadPlugin( 'AbcExport' )
+			except: cmds.error('Could not load AbcExport plugin')
+		#write to disk
+		cmds.AbcExport ( j=command )
+
+		print "parentFolder = %s"%parentFolder
+		print "remainingPath = %s"%remainingPath
+
+		returnString = "%s/%s_cache"%(folderPath,abcFilename)
+	
+	return returnString
+
 def getParentFolder():
 	#get parent folder
 	projPath = getProj.getProject()
@@ -100,7 +158,7 @@ def prepFile(assetObject):
 	cmds.bakeResults(sel,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
 
 	#start dictionary
-	sceneDict = {"characters": []}
+	sceneDict = {"characters": [],"extras": []}
 	#export animation one object at a time
 	for obj in sel:
 		#do the export
@@ -119,6 +177,14 @@ def prepFile(assetObject):
 		#format json
 		charDict = {"name":  newName.split('_')[-1],"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 		sceneDict["characters"].append(charDict)
+
+	#export as alembic
+	abcPath = exportAsAlembic(filename.rsplit('/',1)[-1].split('.')[0])
+
+	if len(abcPath) > 0:
+		extraDict = {"name":  "extras","abc": abcPath}
+		sceneDict["extras"].append(extraDict)
+
 	#write json file
 	jsonFileName  = ('%s.json'%(filename.rsplit('/',1)[-1].split('.')[0]))
 	parentFolder,remainingPath = getParentFolder()
@@ -126,6 +192,7 @@ def prepFile(assetObject):
 	with open(pathName, mode='w') as feedsjson:
 		json.dump(sceneDict, feedsjson, indent=4, sort_keys=True)
 
+	
 	#revert to pre baked file
 	try:
 		cmds.file(filename,open=True,force=True,iv=True)
@@ -141,6 +208,24 @@ def listAllCameras():
 	#remove 'persp' camera
 	if 'persp' in listAllCameras: listAllCameras.remove('persp')
 	return listAllCameras
+
+def addObjectsToScrollList():
+	#list selected objects
+	sel = cmds.ls(sl=True)
+	existing = cmds.textScrollList('extrasList',q=True,allItems=True)
+	if existing:
+		for text in existing:
+			cmds.textScrollList('extrasList',e=True,removeItem=text)
+		sel += existing
+		sel = list(set(sel))
+	
+	cmds.textScrollList('extrasList',e=True,append=sel)
+	
+def removeObjectsFromScrollList():
+	#list selected objects
+	sel = cmds.textScrollList('extrasList',q=True,selectItem=True)
+	for text in sel:
+		cmds.textScrollList('extrasList',e=True,removeItem=text)
 
 
 ###		UI		###
@@ -162,6 +247,8 @@ def IoM_exportAnim_window():
 	cameraSelection = cmds.optionMenu('cameraSelection')
 	for cam in allCameras:
 		cmds.menuItem(l=cam)
+	assetsLabel = cmds.text('assetsLabel',label='Assets')
+	sep1 = cmds.separator("sep1",height=4, style='in' )
 	#checkBoxes
 	publishedAsset = []
 	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
@@ -170,9 +257,15 @@ def IoM_exportAnim_window():
 		cmds.checkBox( label=asset.split(':')[-1], annotation=asset,v=True)
 	
 	cmds.setParent( '..' )
+	sep2 = cmds.separator("sep2",height=4, style='in' )
+	extrasLabel = cmds.text('extrasLabel',label='Extras')
+	extrasList = cmds.textScrollList('extrasList',numberOfRows=8, allowMultiSelection=True,height=102)
+
+	addButton = cmds.button('addButton',l='Add',h=50,w=50,c='addObjectsToScrollList()')
+	removeButton = cmds.button('removeButton',l='Remove',h=50,w=50,c='removeObjectsFromScrollList()')
 	
 	Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile(%s)'%publishedAsset)
-	Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Camera\')') 
+	Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Animation\')') 
 			 
 	cmds.formLayout(
 		exportForm,
@@ -183,6 +276,15 @@ def IoM_exportAnim_window():
 		(cameraSelection,'right',10),
 		(cameraLabel,'left',10),
 		(cameraSelection,'right',10),
+		(sep1,'right',10),
+		(sep1,'left',10),
+		(assetsLabel,'left',10),
+		(extrasLabel,'left',10),
+		(extrasList,'left',10),
+		(addButton,'right',10),
+		(removeButton,'right',10),
+		(sep2,'right',10),
+		(sep2,'left',10),
 		(Button1,'bottom',0),
 		(Button1,'left',0),
 		(Button2,'bottom',0),
@@ -190,8 +292,18 @@ def IoM_exportAnim_window():
 		],
 		attachControl=[
 		(cameraSelection,'left',40,cameraLabel),
-		(boxLayout,'top',20,cameraLabel),
+		(sep1,'top',20,cameraLabel),
+		(assetsLabel,'top',40,cameraLabel),
+		(boxLayout,'top',40,cameraLabel),
 		(boxLayout,'left',40,cameraLabel),
+		(sep2,'top',20,boxLayout),
+		(extrasLabel,'top',40,boxLayout),
+		(extrasList,'top',40,boxLayout),
+		(extrasList,'right',10,addButton),
+		(extrasList,'left',40,cameraLabel),
+		(extrasList,'bottom',40,Button2),
+		(addButton,'top',40,boxLayout),
+		(removeButton,'top',2,addButton),
 		(Button2,'left',0,Button1)
 		],
 		attachPosition=[
@@ -202,7 +314,7 @@ def IoM_exportAnim_window():
 
 def IoM_exportAnim():
 
-	workspaceName = 'Publish Camera'
+	workspaceName = 'Publish Animation'
 	if(cmds.workspaceControl(workspaceName, exists=True)):
 		cmds.deleteUI(workspaceName)
 	cmds.workspaceControl(workspaceName,initialHeight=100,initialWidth=300,uiScript = 'IoM_exportAnim_window()')
