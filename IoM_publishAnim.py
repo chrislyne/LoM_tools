@@ -9,6 +9,22 @@ import json
 import platform
 import subprocess
 
+def getUnityVersions():
+	#list all versions of Unity on the system
+	versions = []
+	#define install path based on the operating system
+	if platform.system() == "Windows":
+		myPath = "C:/Program Files/Unity/Hub/Editor"
+	else:
+		myPath = "/Applications/Unity/Hub/Editor"
+	#filter out unnecessary folders 
+	for f in os.listdir(myPath):
+		if f[0] != '.':
+			#build new list
+			versions.append(f)
+	return versions
+		
+
 def exportAsAlembic(abcFilename):
 
 	#get file/folder path
@@ -87,16 +103,25 @@ def copyUnityScene():
 	folder = unitySceneFile.rsplit('/',1)[0]
 	if not os.path.exists(folder):
 		os.makedirs(folder)
-	#copy file
-	#copyfile(unityTemplateFile, unitySceneFile)
+	
 	#make Unity Scene File
-	projectPath = "%s/Unity"%parentFolder
-	scenePath = "Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
-	shotName = "%s"%filename.split('.')[0]
-	if platform.system() == "Windows":
-	    subprocess.check_output('\"C:/Program Files/Unity/Hub/Editor/2019.2.19f1/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath))
-	else:
-	    subprocess.check_output('/Applications/Unity/Hub/Editor/2019.2.19f1/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath),shell=True)
+	try:
+		projectPath = "%s/Unity"%parentFolder
+		scenePath = "Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
+		shotName = "%s"%filename.split('.')[0]
+		if platform.system() == "Windows":
+			subprocess.check_output('\"C:/Program Files/Unity/Hub/Editor/2019.2.19f1/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath))
+		else:
+			subprocess.check_output('/Applications/Unity/Hub/Editor/2019.2.19f1/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath),shell=True)
+	except:
+		print "Unable to populate Unity scene file"
+		#copy blank Unity scene if auto population fails
+		try:
+			copyfile(unityTemplateFile, unitySceneFile)
+		except:
+			print "no Unity scene file created"
+		
+
 
 #export fbx
 def exportAnimation(obj):
@@ -251,29 +276,36 @@ def IoM_exportAnim_window():
 			publishedAssets.append(t)
 
 	exportForm = cmds.formLayout()
+	#Camera selection
 	cameraLabel = cmds.text('cameraLabel',label='Camera')
-	
 	allCameras = listAllCameras()
 	cameraSelection = cmds.optionMenu('cameraSelection')
 	for cam in allCameras:
 		cmds.menuItem(l=cam)
 	assetsLabel = cmds.text('assetsLabel',label='Assets')
 	sep1 = cmds.separator("sep1",height=4, style='in' )
-	#checkBoxes
+	#Asset export
 	publishedAsset = []
 	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
 	for asset in publishedAssets:
 		publishedAsset.append(asset)
 		cmds.checkBox( label=asset.split(':')[-1], annotation=asset,v=True)
-	
 	cmds.setParent( '..' )
+	#Extras input
 	sep2 = cmds.separator("sep2",height=4, style='in' )
 	extrasLabel = cmds.text('extrasLabel',label='Extras')
 	extrasList = cmds.textScrollList('extrasList',numberOfRows=8, allowMultiSelection=True,height=102)
-
 	addButton = cmds.button('addButton',l='Add',h=50,w=50,c='addObjectsToScrollList()')
 	removeButton = cmds.button('removeButton',l='Remove',h=50,w=50,c='removeObjectsFromScrollList()')
-	
+	#Unity export
+	sep3 = cmds.separator("sep3",height=4, style='in' )
+	versionLabel = cmds.text('versionLabel',label='Unity')
+	versionSelection = cmds.optionMenu('versionSelection')
+	versions = getUnityVersions()
+	for v in versions:
+		cmds.menuItem(l=v)
+	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True)
+	#Main buttons
 	Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile(%s)'%publishedAsset)
 	Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Animation\')') 
 			 
@@ -295,6 +327,10 @@ def IoM_exportAnim_window():
 		(removeButton,'right',10),
 		(sep2,'right',10),
 		(sep2,'left',10),
+		(sep3,'right',10),
+		(sep3,'left',10),
+		(versionLabel,'left',10),
+		(unityCheck,'right',10),
 		(Button1,'bottom',0),
 		(Button1,'left',0),
 		(Button2,'bottom',0),
@@ -311,9 +347,15 @@ def IoM_exportAnim_window():
 		(extrasList,'top',40,boxLayout),
 		(extrasList,'right',10,addButton),
 		(extrasList,'left',40,cameraLabel),
-		(extrasList,'bottom',40,Button2),
+		(extrasList,'bottom',10,sep3),
 		(addButton,'top',40,boxLayout),
 		(removeButton,'top',2,addButton),
+		(sep3,'bottom',20,versionSelection),
+		(versionLabel,'bottom',24,Button1),
+		(versionSelection,'left',40,versionLabel),
+		(versionSelection,'bottom',20,Button1),
+		(versionSelection,'right',10,unityCheck),
+		(unityCheck,'bottom',24,Button1),
 		(Button2,'left',0,Button1)
 		],
 		attachPosition=[
