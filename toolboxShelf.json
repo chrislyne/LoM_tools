@@ -16,7 +16,7 @@
 				"label":"Publish Anim",
 				"script":"IoM_publishAnim.py",
 				"modules": ["baseIO/__init__.py","baseIO/sceneVar.py","baseIO/getProj.py"],
-				"command":"import IoM_publishAnim;from IoM_publishAnim import IoM_exportAnim_window,prepFile;IoM_publishAnim.IoM_exportAnim()",
+				"command":"import IoM_publishAnim;from IoM_publishAnim import *;IoM_publishAnim.IoM_exportAnim()",
 				"stp":"python"
 			},
 			{

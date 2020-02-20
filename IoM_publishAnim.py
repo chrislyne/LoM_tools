@@ -23,18 +23,21 @@ def preferedUnityVersion():
         return (data['unity']['preferedVersion'])
 
 def getUnityVersions():
-	#list all versions of Unity on the system
-	versions = []
-	#define install path based on the operating system
-	if platform.system() == "Windows":
-		myPath = "C:/Program Files/Unity/Hub/Editor"
-	else:
-		myPath = "/Applications/Unity/Hub/Editor"
-	#filter out unnecessary folders 
-	for f in os.listdir(myPath):
-		if f[0] != '.':
-			#build new list
-			versions.append(f)
+	try:
+		#list all versions of Unity on the system
+		versions = []
+		#define install path based on the operating system
+		if platform.system() == "Windows":
+			myPath = "C:/Program Files/Unity/Hub/Editor"
+		else:
+			myPath = "/Applications/Unity/Hub/Editor"
+		#filter out unnecessary folders 
+		for f in os.listdir(myPath):
+			if f[0] != '.':
+				#build new list
+				versions.append(f)
+	except:
+		pass
 	return versions
 		
 
