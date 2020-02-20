@@ -9,6 +9,14 @@ import json
 import platform
 import subprocess
 
+def preferedUnityVersion():
+    projPath = getProj.getProject()
+    settingsFile = '%sdata/projectSettings.json'%(projPath)
+    with open(settingsFile) as json_data:
+        data = json.load(json_data)
+        json_data.close()
+        return (data['unity']['preferedVersion'])
+
 def getUnityVersions():
 	#list all versions of Unity on the system
 	versions = []
@@ -90,36 +98,40 @@ def getParentFolder():
 	return parentFolder,remainingPath
 
 def copyUnityScene():
-	#get file/folder path
-	parentFolder,remainingPath = getParentFolder()
-	filename = cmds.file(q=True,sn=True,shn=True)
-	#paths
-	unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplate.unity'%(parentFolder)
-	unitySceneFile = '%s/Unity/Assets/Scenes/%s/%s.unity'%(parentFolder,remainingPath,filename.split('.')[0])
-	#make folder
-	print "parentFolder = %s/Unity"%parentFolder
-	print "remainingPath = Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
-	print "filename.split('.')[0] = %s"%filename.split('.')[0]
-	folder = unitySceneFile.rsplit('/',1)[0]
-	if not os.path.exists(folder):
-		os.makedirs(folder)
-	
-	#make Unity Scene File
-	try:
-		projectPath = "%s/Unity"%parentFolder
-		scenePath = "Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
-		shotName = "%s"%filename.split('.')[0]
-		if platform.system() == "Windows":
-			subprocess.check_output('\"C:/Program Files/Unity/Hub/Editor/2019.2.19f1/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath))
-		else:
-			subprocess.check_output('/Applications/Unity/Hub/Editor/2019.2.19f1/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(projectPath,shotName,scenePath),shell=True)
-	except:
-		print "Unable to populate Unity scene file"
-		#copy blank Unity scene if auto population fails
+	#get version of Unity from selection menu
+	unityVersion = cmds.optionMenu('versionSelection',v=True,q=True)
+	#check if checkBox is checked and a Unity version exists
+	if cmds.checkBox('unityCheck',v=True,q=True) and len(unityVersion) > 0:
+		#get file/folder path
+		parentFolder,remainingPath = getParentFolder()
+		filename = cmds.file(q=True,sn=True,shn=True)
+		#paths
+		unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplate.unity'%(parentFolder)
+		unitySceneFile = '%s/Unity/Assets/Scenes/%s/%s.unity'%(parentFolder,remainingPath,filename.split('.')[0])
+		#make folder
+		print "parentFolder = %s/Unity"%parentFolder
+		print "remainingPath = Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
+		print "filename.split('.')[0] = %s"%filename.split('.')[0]
+		folder = unitySceneFile.rsplit('/',1)[0]
+		if not os.path.exists(folder):
+			os.makedirs(folder)
+		
+		#make Unity Scene File
 		try:
-			copyfile(unityTemplateFile, unitySceneFile)
+			projectPath = "%s/Unity"%parentFolder
+			scenePath = "Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
+			shotName = "%s"%filename.split('.')[0]
+			if platform.system() == "Windows":
+				subprocess.check_output('\"C:/Program Files/Unity/Hub/Editor/%s/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityVersion,projectPath,shotName,scenePath))
+			else:
+				subprocess.check_output('/Applications/Unity/Hub/Editor/%s/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityVersion,projectPath,shotName,scenePath),shell=True)
 		except:
-			print "no Unity scene file created"
+			print "Unable to populate Unity scene file"
+			#copy blank Unity scene if auto population fails
+			try:
+				copyfile(unityTemplateFile, unitySceneFile)
+			except:
+				print "no Unity scene file created"
 		
 
 
@@ -304,6 +316,11 @@ def IoM_exportAnim_window():
 	versions = getUnityVersions()
 	for v in versions:
 		cmds.menuItem(l=v)
+	preferedVersion = preferedUnityVersion()
+	try:
+		cmds.optionMenu('versionSelection',v=preferedVersion,e=True)
+	except:
+		pass
 	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True)
 	#Main buttons
 	Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile(%s)'%publishedAsset)
