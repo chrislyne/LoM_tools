@@ -9,6 +9,11 @@ import json
 import platform
 import subprocess
 
+def disableMenu():
+	checkValue = cmds.checkBox('unityCheck',v=True,q=True)
+	cmds.optionMenu('versionSelection',e=True,en=checkValue)
+
+
 def preferedUnityVersion():
     projPath = getProj.getProject()
     settingsFile = '%sdata/projectSettings.json'%(projPath)
@@ -289,12 +294,12 @@ def IoM_exportAnim_window():
 
 	exportForm = cmds.formLayout()
 	#Camera selection
-	cameraLabel = cmds.text('cameraLabel',label='Camera')
+	cameraLabel = cmds.text('cameraLabel',label='Camera',w=40,al='left')
 	allCameras = listAllCameras()
 	cameraSelection = cmds.optionMenu('cameraSelection')
 	for cam in allCameras:
 		cmds.menuItem(l=cam)
-	assetsLabel = cmds.text('assetsLabel',label='Assets')
+	assetsLabel = cmds.text('assetsLabel',label='Assets',w=40,al='left')
 	sep1 = cmds.separator("sep1",height=4, style='in' )
 	#Asset export
 	publishedAsset = []
@@ -305,13 +310,13 @@ def IoM_exportAnim_window():
 	cmds.setParent( '..' )
 	#Extras input
 	sep2 = cmds.separator("sep2",height=4, style='in' )
-	extrasLabel = cmds.text('extrasLabel',label='Extras')
+	extrasLabel = cmds.text('extrasLabel',label='Extras',w=40,al='left')
 	extrasList = cmds.textScrollList('extrasList',numberOfRows=8, allowMultiSelection=True,height=102)
 	addButton = cmds.button('addButton',l='Add',h=50,w=50,c='addObjectsToScrollList()')
 	removeButton = cmds.button('removeButton',l='Remove',h=50,w=50,c='removeObjectsFromScrollList()')
 	#Unity export
 	sep3 = cmds.separator("sep3",height=4, style='in' )
-	versionLabel = cmds.text('versionLabel',label='Unity')
+	versionLabel = cmds.text('versionLabel',label='Unity',w=40,al='left')
 	versionSelection = cmds.optionMenu('versionSelection')
 	versions = getUnityVersions()
 	for v in versions:
@@ -321,7 +326,7 @@ def IoM_exportAnim_window():
 		cmds.optionMenu('versionSelection',v=preferedVersion,e=True)
 	except:
 		pass
-	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True)
+	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True,cc='disableMenu()')
 	#Main buttons
 	Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile(%s)'%publishedAsset)
 	Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Animation\')') 
@@ -347,7 +352,7 @@ def IoM_exportAnim_window():
 		(sep3,'right',10),
 		(sep3,'left',10),
 		(versionLabel,'left',10),
-		(unityCheck,'right',10),
+		(versionSelection,'right',10),
 		(Button1,'bottom',0),
 		(Button1,'left',0),
 		(Button2,'bottom',0),
@@ -369,9 +374,9 @@ def IoM_exportAnim_window():
 		(removeButton,'top',2,addButton),
 		(sep3,'bottom',20,versionSelection),
 		(versionLabel,'bottom',24,Button1),
-		(versionSelection,'left',40,versionLabel),
+		(unityCheck,'left',40,versionLabel),
 		(versionSelection,'bottom',20,Button1),
-		(versionSelection,'right',10,unityCheck),
+		(versionSelection,'left',10,unityCheck),
 		(unityCheck,'bottom',24,Button1),
 		(Button2,'left',0,Button1)
 		],
