@@ -9,33 +9,88 @@ import json
 import platform
 import subprocess
 
+def userPrefsPath():
+
+	if platform.system() == "Windows":
+		prefPath = os.path.expanduser('~/maya/prefs')
+	else:
+		prefPath = os.path.expanduser('~/Library/Preferences/Autodesk/Maya/prefs')
+	return prefPath
+
+def browseToFolder():
+
+	folder = cmds.fileDialog2(fileMode=3, dialogStyle=1)
+	if folder:
+		cmds.textFieldButtonGrp('unityPath',e=True,tx=folder[0])
+
+	#format json
+	userPrefsDict = {"unity": {"path":  folder[0]}}
+	#make path
+	prefPath = userPrefsPath()
+	#make folder
+	if not os.path.exists(prefPath):
+			os.makedirs(prefPath)
+
+	jsonFileName  = '%s/IoM_prefs.json'%prefPath
+	#write json to disk
+	with open(jsonFileName, mode='w') as feedsjson:
+		json.dump(userPrefsDict, feedsjson, indent=4, sort_keys=True)
+
+	versions = getUnityVersions(folder[0])
+	menuItems = cmds.optionMenu('versionSelection', q=True, itemListLong=True)
+	if menuItems:
+		cmds.deleteUI(menuItems)
+	for v in versions:
+		cmds.menuItem(l=v)
+	preferedVersion = preferedUnityVersion()
+	try:
+		cmds.optionMenu('versionSelection',v=preferedVersion,e=True)
+	except:
+		pass
+
+
 def disableMenu():
 	checkValue = cmds.checkBox('unityCheck',v=True,q=True)
 	cmds.optionMenu('versionSelection',e=True,en=checkValue)
 
 
 def preferedUnityVersion():
-    projPath = getProj.getProject()
-    settingsFile = '%sdata/projectSettings.json'%(projPath)
-    with open(settingsFile) as json_data:
-        data = json.load(json_data)
-        json_data.close()
-        return (data['unity']['preferedVersion'])
+	projPath = getProj.getProject()
+	settingsFile = '%sdata/projectSettings.json'%(projPath)
+	with open(settingsFile) as json_data:
+		data = json.load(json_data)
+		json_data.close()
+		return (data['unity']['preferedVersion'])
 
-def getUnityVersions():
+def getUnityPath():
+
+	prefPath = userPrefsPath()
+	prefFile = '%s/IoM_prefs.json'%(prefPath)
 	try:
-		#list all versions of Unity on the system
-		versions = []
-		#define install path based on the operating system
+		with open(prefFile) as json_data:
+			data = json.load(json_data)
+			json_data.close()
+			unityEditorPath = data['unity']['path']
+	except:
+		print 'no existing pref file found, trying default Unity locations'
+
 		if platform.system() == "Windows":
-			myPath = "C:/Program Files/Unity/Hub/Editor"
+			unityEditorPath = "C:/Program Files/Unity/Hub/Editor"
 		else:
-			myPath = "/Applications/Unity/Hub/Editor"
-		#filter out unnecessary folders 
+			unityEditorPath = "/Applications/Unity/Hub/Editor"
+	return unityEditorPath
+
+def getUnityVersions(myPath):
+	#list all versions of Unity on the system
+	versions = []
+	#filter out unnecessary folders 
+	try:
 		for f in os.listdir(myPath):
-			if f[0] != '.':
-				#build new list
-				versions.append(f)
+			if f[0] != '.' and os.path.isdir('%s/%s'%(myPath,f)):
+				for e in os.listdir('%s/%s'%(myPath,f)):
+					if e == 'Editor' or e == 'Unity.app':
+						#build new list
+						versions.append(f)
 	except:
 		pass
 	return versions
@@ -129,10 +184,12 @@ def copyUnityScene():
 			projectPath = "%s/Unity"%parentFolder
 			scenePath = "Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
 			shotName = "%s"%filename.split('.')[0]
+			#get path to Unity from text field
+			unityEditorPath = cmds.textFieldButtonGrp('unityPath',q=True,tx=True)
 			if platform.system() == "Windows":
-				subprocess.check_output('\"C:/Program Files/Unity/Hub/Editor/%s/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityVersion,projectPath,shotName,scenePath))
+				subprocess.check_output('\"%s/%s/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityEditorPath,unityVersion,projectPath,shotName,scenePath))
 			else:
-				subprocess.check_output('/Applications/Unity/Hub/Editor/%s/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityVersion,projectPath,shotName,scenePath),shell=True)
+				subprocess.check_output('%s/%s/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityEditorPath,unityVersion,projectPath,shotName,scenePath),shell=True)
 		except:
 			print "Unable to populate Unity scene file"
 			#copy blank Unity scene if auto population fails
@@ -321,7 +378,8 @@ def IoM_exportAnim_window():
 	sep3 = cmds.separator("sep3",height=4, style='in' )
 	versionLabel = cmds.text('versionLabel',label='Unity',w=40,al='left')
 	versionSelection = cmds.optionMenu('versionSelection')
-	versions = getUnityVersions()
+	myPath = getUnityPath()
+	versions = getUnityVersions(myPath)
 	for v in versions:
 		cmds.menuItem(l=v)
 	preferedVersion = preferedUnityVersion()
@@ -330,6 +388,7 @@ def IoM_exportAnim_window():
 	except:
 		pass
 	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True,cc='disableMenu()')
+	unityPath = cmds.textFieldButtonGrp('unityPath',tx=myPath,buttonLabel='...',bc="browseToFolder()")
 	#Main buttons
 	Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile(%s)'%publishedAsset)
 	Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Animation\')') 
@@ -356,6 +415,7 @@ def IoM_exportAnim_window():
 		(sep3,'left',10),
 		(versionLabel,'left',10),
 		(versionSelection,'right',10),
+		(unityPath,'right',10),
 		(Button1,'bottom',0),
 		(Button1,'left',0),
 		(Button2,'bottom',0),
@@ -375,12 +435,14 @@ def IoM_exportAnim_window():
 		(extrasList,'bottom',10,sep3),
 		(addButton,'top',40,boxLayout),
 		(removeButton,'top',2,addButton),
-		(sep3,'bottom',20,versionSelection),
-		(versionLabel,'bottom',24,Button1),
+		(sep3,'bottom',20,unityPath),
+		(versionLabel,'bottom',60,Button1),
 		(unityCheck,'left',40,versionLabel),
 		(versionSelection,'bottom',20,Button1),
 		(versionSelection,'left',10,unityCheck),
-		(unityCheck,'bottom',24,Button1),
+		(unityPath,'bottom',12,versionSelection),
+		(unityPath,'left',10,unityCheck),
+		(unityCheck,'bottom',60,Button1),
 		(Button2,'left',0,Button1)
 		],
 		attachPosition=[
