@@ -17,33 +17,37 @@ def readFilePrefs(attr):
 		pass
 	return value
 
-def addAttrPlus(obj,attr,value):
-    attrExists = cmds.attributeQuery(attr, node=obj, exists=True)
-    if attrExists == False:
-        cmds.addAttr(obj,ln=attr,dt='string')
-    cmds.setAttr('%s.%s'%(obj,attr),value,type='string')
+def addAttrPlus(obj,attr,v):
+	value = ''
+	if v:
+		value = v
+	attrExists = cmds.attributeQuery(attr, node=obj, exists=True)
+	if attrExists == False:
+		cmds.addAttr(obj,ln=attr,dt='string')
+	cmds.setAttr('%s.%s'%(obj,attr),value,type='string')
 
 def createFilePrefs():
-    iomPrefNode = ''
-    if cmds.objExists('IoM_filePrefs') == False:
-        iomPrefNode = cmds.createNode('transform', name='IoM_filePrefs')
-        cmds.setAttr('%s.visibility'%iomPrefNode,0)
-        cmds.setAttr('%s.hiddenInOutliner'%iomPrefNode,1)
-    else:
-        iomPrefNode = 'IoM_filePrefs'
-    
-    setName = cmds.optionMenu('setSelection',q=True,v=True)
-    addAttrPlus(iomPrefNode,'setName',setName)
+	iomPrefNode = ''
+	if cmds.objExists('IoM_filePrefs') == False:
+		iomPrefNode = cmds.createNode('transform', name='IoM_filePrefs')
+		cmds.setAttr('%s.visibility'%iomPrefNode,0)
+		cmds.setAttr('%s.hiddenInOutliner'%iomPrefNode,1)
+	else:
+		iomPrefNode = 'IoM_filePrefs'
+	
+	setName = cmds.optionMenu('setSelection',q=True,v=True)
+	addAttrPlus(iomPrefNode,'setName',setName)
 
 def availableSets():
 	parentFolder,remainingPath = getParentFolder()
 	pathName = '%s/Unity/Assets/Resources/Sets'%(parentFolder)
 	setNames = []
-	sets = os.listdir(pathName)
-	for s in sets:
-		if s.split('.')[-1] == 'prefab':
-			setNames.append(s.split('.')[0])
-	setNames = list(set(setNames))
+	if(os.path.isdir(pathName)):
+		sets = os.listdir(pathName)
+		for s in sets:
+			if s.split('.')[-1] == 'prefab':
+				setNames.append(s.split('.')[0])
+		setNames = list(set(setNames))
 	return setNames
 
 def userPrefsPath():
@@ -89,6 +93,7 @@ def browseToFolder():
 def disableMenu():
 	checkValue = cmds.checkBox('unityCheck',v=True,q=True)
 	cmds.optionMenu('versionSelection',e=True,en=checkValue)
+	cmds.textFieldButtonGrp('unityPath',e=True,en=checkValue)
 
 
 def preferedUnityVersion():
@@ -337,9 +342,10 @@ def prepFile(assetObject):
 
 	#Add Sets to dictionary
 	setName = cmds.optionMenu('setSelection',q=True,v=True)
-	if len(setName) > 0:
-		setDict = {"name":  setName,"model": 'Sets/%s'%setName}
-		sceneDict["sets"].append(setDict)
+	if setName:
+		if len(setName) > 0:
+			setDict = {"name":  setName,"model": 'Sets/%s'%setName}
+			sceneDict["sets"].append(setDict)
 
 	#write json file
 	jsonFileName  = ('%s.json'%(filename.rsplit('/',1)[-1].split('.')[0]))
@@ -435,6 +441,7 @@ def IoM_exportAnim_window():
 	unityPath = cmds.textFieldButtonGrp('unityPath',tx=myPath,buttonLabel='...',bc="browseToFolder()")
 	sep4 = cmds.separator("sep4",height=4, style='in' )
 	#Unity Set
+	setLabel = cmds.text('setLabel',label='Set',w=40,al='left')
 	sets = availableSets()
 	setSelection = cmds.optionMenu('setSelection')
 	for s in sets:
@@ -473,6 +480,7 @@ def IoM_exportAnim_window():
 		(unityPath,'right',10),
 		(sep4,'right',10),
 		(sep4,'left',10),
+		(setLabel,'left',10),
 		(setSelection,'right',10),
 		(Button1,'bottom',0),
 		(Button1,'left',0),
@@ -493,17 +501,18 @@ def IoM_exportAnim_window():
 		(extrasList,'bottom',10,sep3),
 		(addButton,'top',40,boxLayout),
 		(removeButton,'top',2,addButton),
-		(sep3,'bottom',20,unityPath),
-		(versionLabel,'bottom',120,Button1),
+		(sep3,'bottom',60,sep4),
+		(versionLabel,'top',20,sep4),
 		(unityCheck,'left',40,versionLabel),
-		(versionSelection,'bottom',40,setSelection),
-		(versionSelection,'left',10,unityCheck),
-		(unityPath,'bottom',12,versionSelection),
-		(unityPath,'left',10,unityCheck),
-		(unityCheck,'bottom',120,Button1),
-		(sep4,'bottom',20,setSelection),
-		(setSelection,'bottom',20,Button1),
-		(setSelection,'left',10,unityCheck),
+		(versionSelection,'top',50,sep4),
+		(versionSelection,'left',60,versionLabel),
+		(unityPath,'top',16,sep4),
+		(unityPath,'left',60,versionLabel),
+		(unityCheck,'top',20,sep4),
+		(sep4,'bottom',100,Button1),
+		(setLabel,'top',20,sep3),
+		(setSelection,'top',16,sep3),
+		(setSelection,'left',10,setLabel),
 		(Button2,'left',0,Button1)
 		],
 		attachPosition=[
