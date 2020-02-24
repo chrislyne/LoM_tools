@@ -9,6 +9,43 @@ import json
 import platform
 import subprocess
 
+def readFilePrefs(attr):
+	value = ''
+	try:
+		value = cmds.getAttr('IoM_filePrefs.%s'%(attr))
+	except:
+		pass
+	return value
+
+def addAttrPlus(obj,attr,value):
+    attrExists = cmds.attributeQuery(attr, node=obj, exists=True)
+    if attrExists == False:
+        cmds.addAttr(obj,ln=attr,dt='string')
+    cmds.setAttr('%s.%s'%(obj,attr),value,type='string')
+
+def createFilePrefs():
+    iomPrefNode = ''
+    if cmds.objExists('IoM_filePrefs') == False:
+        iomPrefNode = cmds.createNode('transform', name='IoM_filePrefs')
+        cmds.setAttr('%s.visibility'%iomPrefNode,0)
+        cmds.setAttr('%s.hiddenInOutliner'%iomPrefNode,1)
+    else:
+        iomPrefNode = 'IoM_filePrefs'
+    
+    setName = cmds.optionMenu('setSelection',q=True,v=True)
+    addAttrPlus(iomPrefNode,'setName',setName)
+
+def availableSets():
+	parentFolder,remainingPath = getParentFolder()
+	pathName = '%s/Unity/Assets/Resources/Sets'%(parentFolder)
+	setNames = []
+	sets = os.listdir(pathName)
+	for s in sets:
+		if s.split('.')[-1] == 'prefab':
+			setNames.append(s.split('.')[0])
+	setNames = list(set(setNames))
+	return setNames
+
 def userPrefsPath():
 
 	if platform.system() == "Windows":
@@ -248,6 +285,7 @@ def exportAnimation(obj):
 
 def prepFile(assetObject):
 	#save scene
+	createFilePrefs()
 	filename = cmds.file(save=True)
 
 	#get start and end frame
@@ -270,7 +308,7 @@ def prepFile(assetObject):
 	cmds.bakeResults(sel,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
 
 	#start dictionary
-	sceneDict = {"characters": [],"extras": []}
+	sceneDict = {"characters": [],"extras": [],"sets": []}
 	#export animation one object at a time
 	for obj in sel:
 		#do the export
@@ -296,6 +334,12 @@ def prepFile(assetObject):
 	if len(abcPath) > 0:
 		extraDict = {"name":  "extras","abc": abcPath}
 		sceneDict["extras"].append(extraDict)
+
+	#Add Sets to dictionary
+	setName = cmds.optionMenu('setSelection',q=True,v=True)
+	if len(setName) > 0:
+		setDict = {"name":  setName,"model": 'Sets/%s'%setName}
+		sceneDict["sets"].append(setDict)
 
 	#write json file
 	jsonFileName  = ('%s.json'%(filename.rsplit('/',1)[-1].split('.')[0]))
@@ -389,6 +433,17 @@ def IoM_exportAnim_window():
 		pass
 	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True,cc='disableMenu()')
 	unityPath = cmds.textFieldButtonGrp('unityPath',tx=myPath,buttonLabel='...',bc="browseToFolder()")
+	sep4 = cmds.separator("sep4",height=4, style='in' )
+	#Unity Set
+	sets = availableSets()
+	setSelection = cmds.optionMenu('setSelection')
+	for s in sets:
+		cmds.menuItem(l=s)
+	preferedSetName = readFilePrefs('setName')
+	try:
+		cmds.optionMenu('setSelection',v=preferedSetName,e=True)
+	except:
+		pass
 	#Main buttons
 	Button1 = cmds.button('Button1',l='Publish',h=50,c='prepFile(%s)'%publishedAsset)
 	Button2 = cmds.button('Button2',l='Close',h=50,c='cmds.deleteUI(\'Publish Animation\')') 
@@ -416,6 +471,9 @@ def IoM_exportAnim_window():
 		(versionLabel,'left',10),
 		(versionSelection,'right',10),
 		(unityPath,'right',10),
+		(sep4,'right',10),
+		(sep4,'left',10),
+		(setSelection,'right',10),
 		(Button1,'bottom',0),
 		(Button1,'left',0),
 		(Button2,'bottom',0),
@@ -436,13 +494,16 @@ def IoM_exportAnim_window():
 		(addButton,'top',40,boxLayout),
 		(removeButton,'top',2,addButton),
 		(sep3,'bottom',20,unityPath),
-		(versionLabel,'bottom',60,Button1),
+		(versionLabel,'bottom',120,Button1),
 		(unityCheck,'left',40,versionLabel),
-		(versionSelection,'bottom',20,Button1),
+		(versionSelection,'bottom',40,setSelection),
 		(versionSelection,'left',10,unityCheck),
 		(unityPath,'bottom',12,versionSelection),
 		(unityPath,'left',10,unityCheck),
-		(unityCheck,'bottom',60,Button1),
+		(unityCheck,'bottom',120,Button1),
+		(sep4,'bottom',20,setSelection),
+		(setSelection,'bottom',20,Button1),
+		(setSelection,'left',10,unityCheck),
 		(Button2,'left',0,Button1)
 		],
 		attachPosition=[
