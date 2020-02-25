@@ -8,6 +8,7 @@ from shutil import copyfile
 import json
 import platform
 import subprocess
+import tempfile
 
 def readFilePrefs(attr):
 	value = ''
@@ -35,20 +36,30 @@ def createFilePrefs():
 	else:
 		iomPrefNode = 'IoM_filePrefs'
 	
+	profileName = cmds.optionMenu('postProfileSelection',q=True,v=True)
+	addAttrPlus(iomPrefNode,'profileName',profileName)
 	setName = cmds.optionMenu('setSelection',q=True,v=True)
 	addAttrPlus(iomPrefNode,'setName',setName)
 
-def availableSets():
+#list files of a type in a folder
+def listFiles(path,filetype):
+	#get project folder
 	parentFolder,remainingPath = getParentFolder()
-	pathName = '%s/Unity/Assets/Resources/Sets'%(parentFolder)
-	setNames = []
+	#add relative path to folder
+	pathName = '%s/%s'%(parentFolder,path)
+	#make list for legitmate files
+	fileNames = []
+	#read folder
 	if(os.path.isdir(pathName)):
-		sets = os.listdir(pathName)
-		for s in sets:
-			if s.split('.')[-1] == 'prefab':
-				setNames.append(s.split('.')[0])
-		setNames = list(set(setNames))
-	return setNames
+		files = os.listdir(pathName)
+		for f in files:
+			#filter out filetypes
+			if f.split('.')[-1] == filetype:
+				#remove extention
+				fileNames.append(f.split('.')[0])
+		#remove duplicates
+		fileNames = list(set(fileNames))
+	return fileNames
 
 def userPrefsPath():
 
@@ -90,10 +101,12 @@ def browseToFolder():
 		pass
 
 
-def disableMenu():
-	checkValue = cmds.checkBox('unityCheck',v=True,q=True)
-	cmds.optionMenu('versionSelection',e=True,en=checkValue)
-	cmds.textFieldButtonGrp('unityPath',e=True,en=checkValue)
+def disableMenu(checkbox,menu,textfield):
+	checkValue = cmds.checkBox(checkbox,v=True,q=True)
+	for obj in menu:
+		cmds.optionMenu(obj,e=True,en=checkValue)
+	for obj in textfield:
+		cmds.textFieldButtonGrp(obj,e=True,en=checkValue)
 
 
 def preferedUnityVersion():
@@ -179,7 +192,9 @@ def exportAsAlembic(abcFilename):
 				cmds.error('Could not load AbcImport plugin')
 
 		#export .abc
-		command = '-frameRange %d %d -uvWrite -writeVisibility -wholeFrameGeo -worldSpace -writeUVSets -dataFormat ogawa%s -file \"%s/%s_cache.abc\"'%(startFrame,endFrame,exportString,folderPath,abcFilename)
+		abcExportPath = '%s/%s_cache.abc'%(folderPath,abcFilename)
+		abcTempPath = '%s/%s_cache.abc'%(tempfile.gettempdir().replace('\\','/'),abcFilename)
+		command = '-frameRange %d %d -uvWrite -writeVisibility -wholeFrameGeo -worldSpace -writeUVSets -dataFormat ogawa%s -file \"%s\"'%(startFrame,endFrame,exportString,abcTempPath)
 		#load plugin
 		if not cmds.pluginInfo('AbcExport',query=True,loaded=True):
 			try:
@@ -188,6 +203,8 @@ def exportAsAlembic(abcFilename):
 			except: cmds.error('Could not load AbcExport plugin')
 		#write to disk
 		cmds.AbcExport ( j=command )
+
+		copyfile(abcTempPath, abcExportPath)
 
 		returnString = "%s/%s_cache"%(remainingPath,abcFilename)
 	
@@ -214,9 +231,6 @@ def copyUnityScene():
 		unityTemplateFile = '%s/Unity/Assets/Scenes/Templates/shotTemplate.unity'%(parentFolder)
 		unitySceneFile = '%s/Unity/Assets/Scenes/%s/%s.unity'%(parentFolder,remainingPath,filename.split('.')[0])
 		#make folder
-		print "parentFolder = %s/Unity"%parentFolder
-		print "remainingPath = Assets/Scenes/%s/%s.unity"%(remainingPath,filename.split('.')[0])
-		print "filename.split('.')[0] = %s"%filename.split('.')[0]
 		folder = unitySceneFile.rsplit('/',1)[0]
 		if not os.path.exists(folder):
 			os.makedirs(folder)
@@ -304,16 +318,11 @@ def prepFile(assetObject):
 		if cmds.checkBox(c,v=True, q=True):
 			sel.append(assetObject[i])
 
-	#add scene camera to export list
-	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
-	if cameraName:
-		sel.append('|%s'%cameraName)
-
 	#bake keys
 	cmds.bakeResults(sel,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
 
 	#start dictionary
-	sceneDict = {"characters": [],"extras": [],"sets": []}
+	sceneDict = {"cameras": [],"characters": [],"extras": [],"sets": []}
 	#export animation one object at a time
 	for obj in sel:
 		#do the export
@@ -333,6 +342,15 @@ def prepFile(assetObject):
 		charDict = {"name":  newName.split('_')[-1],"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 		sceneDict["characters"].append(charDict)
 
+	#add scene camera to dictionary
+	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
+	postProfile = cmds.optionMenu('postProfileSelection',q=True,v=True)
+	if cameraName:
+		if len(cameraName) > 0:
+			obj,newName,remainingPath = exportAnimation(cameraName)
+			camDict = {"name":  "CAM","model": "%s/%s"%(remainingPath,newName.split('/')[-1]),"anim":"%s/%s"%(remainingPath,newName.split('/')[-1]),"profile":'Profiles/%s'%postProfile}
+			sceneDict["cameras"].append(camDict)
+
 	#export as alembic
 	abcPath = exportAsAlembic(filename.rsplit('/',1)[-1].split('.')[0])
 
@@ -342,7 +360,7 @@ def prepFile(assetObject):
 
 	#Add Sets to dictionary
 	setName = cmds.optionMenu('setSelection',q=True,v=True)
-	if setName:
+	if setName and cmds.checkBox('setCheck',q=True,v=True) == True:
 		if len(setName) > 0:
 			setDict = {"name":  setName,"model": 'Sets/%s'%setName}
 			sceneDict["sets"].append(setDict)
@@ -409,6 +427,16 @@ def IoM_exportAnim_window():
 	cameraSelection = cmds.optionMenu('cameraSelection')
 	for cam in allCameras:
 		cmds.menuItem(l=cam)
+	profiles = listFiles('/Unity/Assets/Resources/Profiles','asset')
+	postProfileSelection = cmds.optionMenu('postProfileSelection')
+	for p in profiles:
+		cmds.menuItem(l=p)
+	preferedProfileName = readFilePrefs('profileName')
+	try:
+		cmds.optionMenu('postProfileSelection',v=preferedProfileName,e=True)
+	except:
+		pass
+
 	assetsLabel = cmds.text('assetsLabel',label='Assets',w=40,al='left')
 	sep1 = cmds.separator("sep1",height=4, style='in' )
 	#Asset export
@@ -437,12 +465,13 @@ def IoM_exportAnim_window():
 		cmds.optionMenu('versionSelection',v=preferedVersion,e=True)
 	except:
 		pass
-	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True,cc='disableMenu()')
+	unityCheck = cmds.checkBox('unityCheck',l="",annotation="Generate Unity scene file",v=True,cc='disableMenu(\'unityCheck\',[\'versionSelection\'],[\'unityPath\'])')
 	unityPath = cmds.textFieldButtonGrp('unityPath',tx=myPath,buttonLabel='...',bc="browseToFolder()")
 	sep4 = cmds.separator("sep4",height=4, style='in' )
 	#Unity Set
 	setLabel = cmds.text('setLabel',label='Set',w=40,al='left')
-	sets = availableSets()
+	setCheck = cmds.checkBox('setCheck',l="",annotation="Include Set",v=True,cc='disableMenu(\'setCheck\',[\'setSelection\'],[])')
+	sets = listFiles('/Unity/Assets/Resources/Sets','prefab')
 	setSelection = cmds.optionMenu('setSelection')
 	for s in sets:
 		cmds.menuItem(l=s)
@@ -461,9 +490,9 @@ def IoM_exportAnim_window():
 		attachForm=[
 		(cameraLabel,'top',20),
 		(cameraSelection,'top',15),
-		(cameraSelection,'right',10),
+		(postProfileSelection,'top',15),
+		(postProfileSelection,'right',10),
 		(cameraLabel,'left',10),
-		(cameraSelection,'right',10),
 		(sep1,'right',10),
 		(sep1,'left',10),
 		(assetsLabel,'left',10),
@@ -489,6 +518,7 @@ def IoM_exportAnim_window():
 		],
 		attachControl=[
 		(cameraSelection,'left',40,cameraLabel),
+		(postProfileSelection,'left',0,cameraSelection),
 		(sep1,'top',20,cameraLabel),
 		(assetsLabel,'top',40,cameraLabel),
 		(boxLayout,'top',40,cameraLabel),
@@ -511,12 +541,15 @@ def IoM_exportAnim_window():
 		(unityCheck,'top',20,sep4),
 		(sep4,'bottom',100,Button1),
 		(setLabel,'top',20,sep3),
+		(setCheck,'top',20,sep3),
+		(setCheck,'left',40,setLabel),
 		(setSelection,'top',16,sep3),
-		(setSelection,'left',10,setLabel),
+		(setSelection,'left',60,setLabel),
 		(Button2,'left',0,Button1)
 		],
 		attachPosition=[
-		(Button1,'right',0,50)
+		(Button1,'right',0,50),
+		(cameraSelection,'right',0,60)
 		])
 
 	exportForm
