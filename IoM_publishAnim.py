@@ -345,10 +345,14 @@ def prepFile(assetObject):
 	#add scene camera to dictionary
 	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
 	postProfile = cmds.optionMenu('postProfileSelection',q=True,v=True)
+	if postProfile == 'No Profile':
+		postProfile = ''
+	else:
+		postProfile = 'Profiles/%s'%postProfile
 	if cameraName:
 		if len(cameraName) > 0:
 			obj,newName,remainingPath = exportAnimation(cameraName)
-			camDict = {"name":  "CAM","model": "%s/%s"%(remainingPath,newName.split('/')[-1]),"anim":"%s/%s"%(remainingPath,newName.split('/')[-1]),"profile":'Profiles/%s'%postProfile}
+			camDict = {"name":  "CAM","model": "%s/%s"%(remainingPath,newName.split('/')[-1]),"anim":"%s/%s"%(remainingPath,newName.split('/')[-1]),"profile":postProfile}
 			sceneDict["cameras"].append(camDict)
 
 	#export as alembic
@@ -428,6 +432,7 @@ def IoM_exportAnim_window():
 	for cam in allCameras:
 		cmds.menuItem(l=cam)
 	profiles = listFiles('/Unity/Assets/Resources/Profiles','asset')
+	profiles = ['No Profile'] + profiles
 	postProfileSelection = cmds.optionMenu('postProfileSelection')
 	for p in profiles:
 		cmds.menuItem(l=p)
