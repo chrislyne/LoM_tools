@@ -9,6 +9,27 @@ import json
 import platform
 import subprocess
 import tempfile
+import re
+
+def parentNewCamera(oldCamera):
+	#find cameraShape
+	camShape = cmds.listRelatives(oldCamera,type='camera')
+	oldCamera = [oldCamera]
+	oldCamera.append(camShape[0])
+	#make new camera
+	newCamera = cmds.camera(n='EXPORT_CAM');
+	#copy transform attributes
+	atttributes = ['rotatePivotX','rotatePivotY','rotatePivotZ','scalePivotX','scalePivotY','scalePivotZ']
+	for a in atttributes:
+		cmds.connectAttr('%s.%s'%(oldCamera[0],a),'%s.%s'%(newCamera[0],a))
+	#constrain new camera to old camera
+	cmds.parentConstraint(oldCamera[0],newCamera[0])
+	#copy camera attributes
+	atttributes = ['focalLength']
+	for a in atttributes:
+		cmds.connectAttr('%s.%s'%(oldCamera[1],a),'%s.%s'%(newCamera[1],a))
+	#return new transform and shape as list
+	return newCamera
 
 def readFilePrefs(attr):
 	value = ''
@@ -339,7 +360,8 @@ def prepFile(assetObject):
 			#make a name if publishName attribute doesn't exist
 			publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
 		#format json
-		charDict = {"name":  newName.split('_')[-1],"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
+		displayName = re.split('\d+', newName)[-1][1:]
+		charDict = {"name":  displayName,"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 		sceneDict["characters"].append(charDict)
 
 	#add scene camera to dictionary
@@ -351,7 +373,11 @@ def prepFile(assetObject):
 		postProfile = 'Profiles/%s'%postProfile
 	if cameraName:
 		if len(cameraName) > 0:
-			obj,newName,remainingPath = exportAnimation(cameraName)
+			newCamera = parentNewCamera(cameraName)[0]
+			#bake keys
+			cmds.bakeResults(newCamera,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
+
+			obj,newName,remainingPath = exportAnimation(newCamera)
 			camDict = {"name":  "CAM","model": "%s/%s"%(remainingPath,newName.split('/')[-1]),"anim":"%s/%s"%(remainingPath,newName.split('/')[-1]),"profile":postProfile}
 			sceneDict["cameras"].append(camDict)
 
