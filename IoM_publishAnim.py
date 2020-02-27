@@ -61,6 +61,8 @@ def createFilePrefs():
 	addAttrPlus(iomPrefNode,'profileName',profileName)
 	setName = cmds.optionMenu('setSelection',q=True,v=True)
 	addAttrPlus(iomPrefNode,'setName',setName)
+	rimName = cmds.optionMenu('rimSelection',q=True,v=True)
+	addAttrPlus(iomPrefNode,'rimName',rimName)
 
 #list files of a type in a folder
 def listFiles(path,filetype):
@@ -367,10 +369,15 @@ def prepFile(assetObject):
 	#add scene camera to dictionary
 	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
 	postProfile = cmds.optionMenu('postProfileSelection',q=True,v=True)
+	rimProfile = cmds.optionMenu('rimSelection',q=True,v=True)
 	if postProfile == 'No Profile':
 		postProfile = ''
 	else:
 		postProfile = 'Profiles/%s'%postProfile
+	if rimProfile == 'No Profile':
+		rimProfile = ''
+	else:
+		rimProfile = 'Profiles/rimlight/%s'%rimProfile
 	if cameraName:
 		if len(cameraName) > 0:
 			newCamera = parentNewCamera(cameraName)[0]
@@ -378,7 +385,7 @@ def prepFile(assetObject):
 			cmds.bakeResults(newCamera,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
 
 			obj,newName,remainingPath = exportAnimation(newCamera)
-			camDict = {"name":  "CAM","model": "%s/%s"%(remainingPath,newName.split('/')[-1]),"anim":"%s/%s"%(remainingPath,newName.split('/')[-1]),"profile":postProfile}
+			camDict = {"name":  "CAM","model": "%s/%s"%(remainingPath,newName.split('/')[-1]),"anim":"%s/%s"%(remainingPath,newName.split('/')[-1]),"profile":postProfile,"rimProfile":rimProfile}
 			sceneDict["cameras"].append(camDict)
 
 	#export as alembic
@@ -467,10 +474,22 @@ def IoM_exportAnim_window():
 		cmds.optionMenu('postProfileSelection',v=preferedProfileName,e=True)
 	except:
 		pass
-
-	assetsLabel = cmds.text('assetsLabel',label='Assets',w=40,al='left')
-	sep1 = cmds.separator("sep1",height=4, style='in' )
+	#Rim light 
+	sep_rimLight = cmds.separator("sep_rimLight",height=4, style='in' )
+	rimLabel = cmds.text('rimLabel',label='Rim Light',w=50,al='left')
+	rimProfiles = listFiles('/Unity/Assets/Resources/Profiles/rimlight','json')
+	rimProfiles = ['No Profile'] + rimProfiles
+	rimSelection = cmds.optionMenu('rimSelection')
+	for r in rimProfiles:
+		cmds.menuItem(l=r)
+	preferedRimProfileName = readFilePrefs('rimName')
+	try:
+		cmds.optionMenu('rimSelection',v=preferedRimProfileName,e=True)
+	except:
+		pass
 	#Asset export
+	sep_assets = cmds.separator("sep_assets",height=4, style='in' )
+	assetsLabel = cmds.text('assetsLabel',label='Assets',w=40,al='left')
 	publishedAsset = []
 	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
 	for asset in publishedAssets:
@@ -524,8 +543,12 @@ def IoM_exportAnim_window():
 		(postProfileSelection,'top',15),
 		(postProfileSelection,'right',10),
 		(cameraLabel,'left',10),
-		(sep1,'right',10),
-		(sep1,'left',10),
+		(sep_rimLight,'right',10),
+		(sep_rimLight,'left',10),
+		(rimLabel,'left',10),
+		(rimSelection,'right',10),
+		(sep_assets,'right',10),
+		(sep_assets,'left',10),
 		(assetsLabel,'left',10),
 		(extrasLabel,'left',10),
 		(extrasList,'left',10),
@@ -550,9 +573,13 @@ def IoM_exportAnim_window():
 		attachControl=[
 		(cameraSelection,'left',40,cameraLabel),
 		(postProfileSelection,'left',0,cameraSelection),
-		(sep1,'top',20,cameraLabel),
-		(assetsLabel,'top',40,cameraLabel),
-		(boxLayout,'top',40,cameraLabel),
+		(sep_rimLight,'top',20,cameraLabel),
+		(rimLabel,'top',20,sep_rimLight),
+		(rimSelection,'top',15,sep_rimLight),
+		(rimSelection,'left',30,rimLabel),
+		(sep_assets,'top',60,sep_rimLight),
+		(assetsLabel,'top',20,sep_assets),
+		(boxLayout,'top',20,sep_assets),
 		(boxLayout,'left',40,cameraLabel),
 		(sep2,'top',20,boxLayout),
 		(extrasLabel,'top',40,boxLayout),

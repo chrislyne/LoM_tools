@@ -21,6 +21,8 @@ public class BuildScene : EditorWindow
         public string characterPath;
         public string animPath;
         public string setPath;
+        public string profilePath;
+        public string rimPath;
     }
 
     GameObject tempobj = null;
@@ -37,6 +39,7 @@ public class BuildScene : EditorWindow
         public string anim;
         public string abc;
         public string profile;
+        public string rimProfile;
     }
 
     public class PlayerStatsList
@@ -64,9 +67,21 @@ public class BuildScene : EditorWindow
         //set window title
         this.titleContent = new GUIContent("IoM - Build Scene");
         //object field
+        GUILayout.BeginHorizontal("box");
         source = EditorGUILayout.ObjectField(source, typeof(TextAsset), true);
 
-        if (GUILayout.Button("Add to scene"))
+        if (GUILayout.Button("Scene Name", GUILayout.Width(100)))
+        {
+            //get name of scene
+            Scene scene = SceneManager.GetActiveScene();
+            //look for corresponding json file
+            var jsonFile = Resources.Load<UnityEngine.Object>("JSON/" + scene.name);
+            //set object feild text asset to use json file
+            source = EditorGUILayout.ObjectField(jsonFile, typeof(TextAsset), true);
+        }
+
+        GUILayout.EndHorizontal();
+        if (GUILayout.Button("Add to scene", GUILayout.Height(60)))
         {
             //clear out any existing timeline objects
             if (GameObject.Find("TIMELINE") != null)
@@ -77,6 +92,7 @@ public class BuildScene : EditorWindow
             GameObject timeline = new GameObject("TIMELINE");
             PlayableDirector director = timeline.AddComponent<PlayableDirector>();
             TimelineAsset timelineAsset = CreateInstance<TimelineAsset>();
+            timelineAsset.editorSettings.fps = 25;
             director.playableAsset = timelineAsset;
 
             //load json into class
@@ -102,6 +118,7 @@ public class BuildScene : EditorWindow
                 AnimationClip animClip = Resources.Load<AnimationClip>(abcObject.animPath);
 
                 TimelineClip timelineClip = newTrack.CreateDefaultClip();
+
                 //var abcPlayableAsset = (PlayableAsset)timelineClip.asset;
                 //abcPlayableAsset.
 
@@ -120,7 +137,6 @@ public class BuildScene : EditorWindow
                 tempobj.name = c.name;
 
                 //create animation track on TIMELINE
-
                 AnimationTrack newTrack = timelineAsset.CreateTrack<AnimationTrack>(null, "Animation Track " + tempobj.name);
                 director.SetGenericBinding(newTrack, tempobj);
                 myObject.animPath = c.anim;
@@ -131,9 +147,35 @@ public class BuildScene : EditorWindow
                 var animPlayableAsset = (AnimationPlayableAsset)timelineClip.asset;
                 animPlayableAsset.removeStartOffset = false;
 
+                //add post processing to camera
+                GameObject cam = tempobj;
+
+                //make rim light
+                myObject.rimPath = c.rimProfile;
+                RimLight.createRimLight(tempobj, myObject.rimPath);
+
+
+                myObject.profilePath = c.profile;
+                //add post processing
+                PostProcessing.addPostProcessing(cam, myObject.profilePath);
+                /*
+                if (myObject.profilePath != "")
+                {
+                    //Set Main Camera layer to Postprocessing
+                    cam.layer = LayerMask.NameToLayer("Post-Processing");
+                    PostProcessLayer ppl = cam.AddComponent<PostProcessLayer>();
+                    
+                    ppl.antialiasingMode = PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
+                    ppl.volumeLayer = 1 << LayerMask.NameToLayer("Post-Processing");
+                    PostProcessVolume ppv = cam.AddComponent<PostProcessVolume>();
+                    ppv.isGlobal = true;
+                    var ppp = Resources.Load<PostProcessProfile>(myObject.profilePath);
+                    
+                    ppv.profile = ppp;
+                }*/
             }
 
-            //loop through objects in class
+            //add characters and props to scene
             foreach (PlayerStats p in myPlayerStatsList.characters)
             {
                 //place asset in scene
@@ -141,6 +183,12 @@ public class BuildScene : EditorWindow
                 myObject.characterPath = p.model;
                 tempobj = (GameObject)Instantiate(Resources.Load(myObject.characterPath), new Vector3(0, 0, 0), Quaternion.identity);
                 tempobj.name = p.name;
+
+                foreach (Transform trans in tempobj.GetComponentsInChildren<Transform>(true))
+                {
+                    trans.gameObject.layer = LayerMask.NameToLayer("Characters");
+                }
+
 
                 //create animation track on TIMELINE
 
@@ -164,20 +212,7 @@ public class BuildScene : EditorWindow
                 tempobj = (GameObject)Instantiate(Resources.Load(myObject.setPath), new Vector3(0, 0, 0), Quaternion.identity);
                 tempobj.name = s.name;
             }
-            //add post processing to camera
-            GameObject cam = GameObject.Find("CAM");
-            if (cam != null)
-            {
-                cam.AddComponent<PostProcessLayer>();
-                PostProcessVolume ppv = cam.AddComponent<PostProcessVolume>();
-                var ppp = Resources.Load<PostProcessProfile>("Profiles/MainCameraProfile1");
-                Debug.Log("foobar" + ppp);
-                ppv.profile = ppp;
-            }
-            else
-            {
-                Debug.LogWarning("No Camera found. The camera must be named - CAM");
-            }
+            
             
             //EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), "C:/Users/Chris/Dropbox/Jobs/LoM_Production/Unity/Assets/Scenes/dev/saveTest2.unity");
         }
@@ -186,8 +221,14 @@ public class BuildScene : EditorWindow
             GameObject cam = GameObject.Find("CAM");
             if (cam != null)
             {
+                MyClass myObject = new MyClass();
+                string jsonText = File.ReadAllText(Application.dataPath + "/Resources/json/" + source.name + ".json");
+                PlayerStatsList myPlayerStatsList = new PlayerStatsList();
+                JsonUtility.FromJsonOverwrite(jsonText, myPlayerStatsList);
+                PlayerStats c = myPlayerStatsList.cameras[0];
+                myObject.profilePath = c.profile;
                 PostProcessVolume ppv;
-                var ppp = Resources.Load<PostProcessProfile>("Profiles/MainCameraProfile1");
+                var ppp = Resources.Load<PostProcessProfile>(myObject.profilePath);
                 if (cam.GetComponent(typeof(PostProcessVolume)) == null)
                 {
                     cam.AddComponent<PostProcessLayer>();
@@ -203,15 +244,6 @@ public class BuildScene : EditorWindow
             {
                 Debug.LogWarning("No Camera found. The camera must be named - CAM");
             }
-        }
-        if (GUILayout.Button("Get Scene Name"))
-        {
-            //get name of scene
-            Scene scene = SceneManager.GetActiveScene();
-            //look for corresponding json file
-            var jsonFile = Resources.Load<UnityEngine.Object>("JSON/"+scene.name);
-            //set object feild text asset to use json file
-            source = EditorGUILayout.ObjectField(jsonFile, typeof(TextAsset), true);
         }
 
     }
