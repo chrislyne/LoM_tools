@@ -105,26 +105,7 @@ public class BuildScene : EditorWindow
             {
                 MyClass abcObject = new MyClass();
                 abcObject.characterPath = e.abc;
-                Debug.Log(abcObject.characterPath);
-                //UnityEngine.Object abcObj = Resources.Load(abcObject.characterPath);
-                abcobj = (GameObject)Instantiate(Resources.Load(abcObject.characterPath), new Vector3(0, 0, 0), Quaternion.identity);
-                abcobj.name = "extras";
-
-                
-                //create animation track on TIMELINE
-                AlembicTrack newTrack = timelineAsset.CreateTrack<AlembicTrack>(null, abcobj.name);
-                director.SetGenericBinding(newTrack, abcobj);
-                //abcObject.animPath = e.anim;
-                AnimationClip animClip = Resources.Load<AnimationClip>(abcObject.animPath);
-
-                TimelineClip timelineClip = newTrack.CreateDefaultClip();
-
-                //var abcPlayableAsset = (PlayableAsset)timelineClip.asset;
-                //abcPlayableAsset.
-
-                //TrackAsset timelineClip.CreateDefaultClip();
-
-
+                Extras.addExtras(abcObject,director,timelineAsset);
             }
 
             //add camera to scene
@@ -147,32 +128,13 @@ public class BuildScene : EditorWindow
                 var animPlayableAsset = (AnimationPlayableAsset)timelineClip.asset;
                 animPlayableAsset.removeStartOffset = false;
 
-                //add post processing to camera
-                GameObject cam = tempobj;
-
                 //make rim light
                 myObject.rimPath = c.rimProfile;
                 RimLight.createRimLight(tempobj, myObject.rimPath);
 
-
-                myObject.profilePath = c.profile;
                 //add post processing
-                PostProcessing.addPostProcessing(cam, myObject.profilePath);
-                /*
-                if (myObject.profilePath != "")
-                {
-                    //Set Main Camera layer to Postprocessing
-                    cam.layer = LayerMask.NameToLayer("Post-Processing");
-                    PostProcessLayer ppl = cam.AddComponent<PostProcessLayer>();
-                    
-                    ppl.antialiasingMode = PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
-                    ppl.volumeLayer = 1 << LayerMask.NameToLayer("Post-Processing");
-                    PostProcessVolume ppv = cam.AddComponent<PostProcessVolume>();
-                    ppv.isGlobal = true;
-                    var ppp = Resources.Load<PostProcessProfile>(myObject.profilePath);
-                    
-                    ppv.profile = ppp;
-                }*/
+                PostProcessing.addPostProcessing(tempobj, c.profile);
+
             }
 
             //add characters and props to scene
@@ -188,8 +150,6 @@ public class BuildScene : EditorWindow
                 {
                     trans.gameObject.layer = LayerMask.NameToLayer("Characters");
                 }
-
-
                 //create animation track on TIMELINE
 
                 AnimationTrack newTrack = timelineAsset.CreateTrack<AnimationTrack>(null, "Animation Track " + tempobj.name);
@@ -212,38 +172,18 @@ public class BuildScene : EditorWindow
                 tempobj = (GameObject)Instantiate(Resources.Load(myObject.setPath), new Vector3(0, 0, 0), Quaternion.identity);
                 tempobj.name = s.name;
             }
-            
-            
-            //EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), "C:/Users/Chris/Dropbox/Jobs/LoM_Production/Unity/Assets/Scenes/dev/saveTest2.unity");
+        //button to add post effects if it doesn't get added automaticly (or changes)
         }
         if (GUILayout.Button("Add Post Effects"))
         {
             GameObject cam = GameObject.Find("CAM");
-            if (cam != null)
-            {
-                MyClass myObject = new MyClass();
-                string jsonText = File.ReadAllText(Application.dataPath + "/Resources/json/" + source.name + ".json");
-                PlayerStatsList myPlayerStatsList = new PlayerStatsList();
-                JsonUtility.FromJsonOverwrite(jsonText, myPlayerStatsList);
-                PlayerStats c = myPlayerStatsList.cameras[0];
-                myObject.profilePath = c.profile;
-                PostProcessVolume ppv;
-                var ppp = Resources.Load<PostProcessProfile>(myObject.profilePath);
-                if (cam.GetComponent(typeof(PostProcessVolume)) == null)
-                {
-                    cam.AddComponent<PostProcessLayer>();
-                    ppv = cam.AddComponent<PostProcessVolume>();
-                }
-                else
-                {
-                    ppv = cam.GetComponent<PostProcessVolume>();
-                }
-                ppv.profile = ppp;
-            }
-            else
-            {
-                Debug.LogWarning("No Camera found. The camera must be named - CAM");
-            }
+            MyClass myObject = new MyClass();
+            string jsonText = File.ReadAllText(Application.dataPath + "/Resources/json/" + source.name + ".json");
+            PlayerStatsList myPlayerStatsList = new PlayerStatsList();
+            JsonUtility.FromJsonOverwrite(jsonText, myPlayerStatsList);
+            PlayerStats c = myPlayerStatsList.cameras[0];
+           
+            PostProcessing.addPostProcessing(cam, c.profile);
         }
 
     }

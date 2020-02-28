@@ -61,8 +61,6 @@ public class BuildSceneBatch : EditorWindow
 
     static void PerformBuild()
     {
-        PostProcessVolume ppv;
-        PostProcessProfile ppp;
 
         //clear out any existing timeline objects
         if (GameObject.Find("TIMELINE") != null)
@@ -85,24 +83,9 @@ public class BuildSceneBatch : EditorWindow
         //add abc cache to scene
         foreach (PlayerStats e in myPlayerStatsList.extras)
         {
-            MyClass abcObject = new MyClass();
+            BuildScene.MyClass abcObject = new BuildScene.MyClass();
             abcObject.characterPath = e.abc;
-            GameObject tempobj = (GameObject)Instantiate(Resources.Load(abcObject.characterPath), new Vector3(0, 0, 0), Quaternion.identity);
-            tempobj.name = "extras";
-
-            //create animation track on TIMELINE
-            AlembicTrack newTrack = timelineAsset.CreateTrack<AlembicTrack>(null, tempobj.name);
-            director.SetGenericBinding(newTrack, tempobj);
-
-            AnimationClip animClip = Resources.Load<AnimationClip>(abcObject.animPath);
-
-            TimelineClip timelineClip = newTrack.CreateDefaultClip();
-            //abcObject.animPath = e.anim;
-            //TrackAsset animClip = Resources.Load<TrackAsset>(tempobj);
-
-
-
-            //newTrack.CreateClip
+            Extras.addExtras(abcObject, director, timelineAsset);
         }
 
         //add camera to scene
@@ -129,20 +112,8 @@ public class BuildSceneBatch : EditorWindow
             myObject.rimPath = c.rimProfile;
             RimLight.createRimLight(tempobj, myObject.rimPath);
 
-            //add post processing to camera
-            myObject.profilePath = c.profile;
-            if (myObject.profilePath != "")
-            {
-                //Set Main Camera layer to Postprocessing
-                tempobj.layer = LayerMask.NameToLayer("Post-Processing");
-                PostProcessLayer ppl = tempobj.AddComponent<PostProcessLayer>();
-                ppl.antialiasingMode = PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
-                ppl.volumeLayer = 1 << LayerMask.NameToLayer("Post-Processing");
-                ppv = tempobj.AddComponent<PostProcessVolume>();
-                ppv.isGlobal = true;
-                ppp = Resources.Load<PostProcessProfile>(myObject.profilePath);
-                ppv.profile = ppp;
-            }
+            //add post processing
+            PostProcessing.addPostProcessing(tempobj, c.profile);
         }
 
         //loop through objects in class

@@ -38,6 +38,7 @@ public class SaveRimProfile : EditorWindow
     //string[] options = { "Rigidbody", "Box Collider", "Sphere Collider" };
 
     string[] options = Directory.GetFiles(@"Assets\Resources\Profiles\rimlight", "*.json");
+    
 
     void OnGUI()
     {
@@ -68,18 +69,22 @@ public class SaveRimProfile : EditorWindow
             writer.Close();
         }
         GUILayout.Space(60);
-        index = EditorGUILayout.Popup(index, options);
+        string[] rimProfileNames = new String[options.Length];
+
+        for (int runs = 0; runs < options.Length; runs++)
+        {
+            string[] profileSplit = options[runs].Split('\\');
+            string nameSplit = profileSplit[profileSplit.Length - 1].Split('.')[0];
+            rimProfileNames[runs] = nameSplit;
+        }
+        index = EditorGUILayout.Popup(index, rimProfileNames);
 
         if (GUILayout.Button("Load Profile"))
         {
-            Debug.Log("Load Button");
-            string[] filePaths = Directory.GetFiles(@"Assets/Resources/Profiles/rimlight", "*.json");
+            GameObject cam = GameObject.Find("CAM");
+            Debug.Log("Profiles/rimlight" + rimProfileNames[index]);
+            RimLight.createRimLight(cam, "Profiles/rimlight/" + rimProfileNames[index]);
 
-            foreach (string obj in filePaths)
-                {
-                Debug.Log(obj);
-            }
-            
         }
     }
 }

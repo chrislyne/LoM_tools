@@ -16,7 +16,7 @@ public class RimLight : EditorWindow
         public Color Colour = new Color(1,1,1,1);
     }
     // Start is called before the first frame update
-    static public void createRimLight(GameObject tempobj, string rimProfile)
+    static public void createRimLight(GameObject camera, string rimProfile)
     {
         //make rimSettingsList
         RimSettingsList rimSettingsList = new RimSettingsList();
@@ -27,10 +27,22 @@ public class RimLight : EditorWindow
             JsonUtility.FromJsonOverwrite(jsonText, rimSettingsList);
         }
         //make the light
-        GameObject lightGameObject = new GameObject("Rim Light");
-        Light rimLight = lightGameObject.AddComponent<Light>();
-        rimLight.transform.Rotate(rimSettingsList.Angle.x, rimSettingsList.Angle.y, rimSettingsList.Angle.z, Space.Self);
-        rimLight.transform.SetParent(tempobj.transform);
+        GameObject lightGameObject;
+        Light rimLight;
+        if (GameObject.Find("Rim Light"))
+        {
+            //assign the light 
+            lightGameObject = GameObject.Find("Rim Light");
+            rimLight = lightGameObject.GetComponent<Light>();
+        }
+        else
+        {
+            //make a light if one doesn't already exist
+            lightGameObject = new GameObject("Rim Light");
+            rimLight = lightGameObject.AddComponent<Light>();
+        }
+        rimLight.transform.localRotation = Quaternion.Euler(rimSettingsList.Angle.x, rimSettingsList.Angle.y, rimSettingsList.Angle.z);
+        rimLight.transform.SetParent(camera.transform);
         rimLight.color = rimSettingsList.Colour;
         rimLight.intensity = rimSettingsList.Intensity;
         rimLight.type = LightType.Directional;
