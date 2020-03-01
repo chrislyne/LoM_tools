@@ -341,32 +341,34 @@ def prepFile(assetObject):
 		if cmds.checkBox(c,v=True, q=True):
 			sel.append(assetObject[i])
 
-	#bake keys
-	cmds.bakeResults(sel,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
-
 	#start dictionary
 	sceneDict = {"cameras": [],"characters": [],"extras": [],"sets": []}
-	#export animation one object at a time
-	for obj in sel:
-		#do the export
-		obj,newName,remainingPath = exportAnimation(obj)
-		#make character dictionary
-		try:
-			#get REF filename
-			publishName = cmds.getAttr('%s.publishName'%obj)
-			#get asset type from parent folder
-			refPath = cmds.referenceQuery( obj,filename=True )
-			assetType = os.path.split(os.path.dirname(refPath))[1]
-			publishName = "%s/%s"%(assetType,publishName)
-		except:
-			#make a name if publishName attribute doesn't exist
-			publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
-		#format json
-		displayName = re.split('\d+', newName)[-1][1:]
-		charDict = {"name":  displayName,"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
-		sceneDict["characters"].append(charDict)
 
-	#add scene camera to dictionary
+	if sel:
+		#bake keys
+		cmds.bakeResults(sel,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
+
+		#export animation one object at a time
+		for obj in sel:
+			#do the export
+			obj,newName,remainingPath = exportAnimation(obj)
+			#make character dictionary
+			try:
+				#get REF filename
+				publishName = cmds.getAttr('%s.publishName'%obj)
+				#get asset type from parent folder
+				refPath = cmds.referenceQuery( obj,filename=True )
+				assetType = os.path.split(os.path.dirname(refPath))[1]
+				publishName = "%s/%s"%(assetType,publishName)
+			except:
+				#make a name if publishName attribute doesn't exist
+				publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
+			#format json
+			displayName = re.split('\d+', newName)[-1][1:]
+			charDict = {"name":  displayName,"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
+			sceneDict["characters"].append(charDict)
+
+	#add camera
 	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
 	postProfile = cmds.optionMenu('postProfileSelection',q=True,v=True)
 	rimProfile = cmds.optionMenu('rimSelection',q=True,v=True)
