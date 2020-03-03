@@ -11,6 +11,14 @@ import subprocess
 import tempfile
 import re
 
+def findDirectionalLights():
+	lightTransforms = []
+	lights = cmds.ls(type="directionalLight")
+	for l in lights:
+		p = cmds.listRelatives(l, p=True)[0]
+		lightTransforms.append(p)
+	return lightTransforms
+
 def parentNewCamera(oldCamera):
 	#find cameraShape
 	camShape = cmds.listRelatives(oldCamera,type='camera')
@@ -63,6 +71,8 @@ def createFilePrefs():
 	addAttrPlus(iomPrefNode,'setName',setName)
 	rimName = cmds.optionMenu('rimSelection',q=True,v=True)
 	addAttrPlus(iomPrefNode,'rimName',rimName)
+	sunName = cmds.optionMenu('sunSelection',q=True,v=True)
+	addAttrPlus(iomPrefNode,'sunName',sunName)
 
 #list files of a type in a folder
 def listFiles(path,filetype):
@@ -342,7 +352,7 @@ def prepFile(assetObject):
 			sel.append(assetObject[i])
 
 	#start dictionary
-	sceneDict = {"cameras": [],"characters": [],"extras": [],"sets": []}
+	sceneDict = {"cameras": [],"characters": [],"extras": [],"sets": [],"lights": []}
 
 	if sel:
 		#bake keys
@@ -389,6 +399,17 @@ def prepFile(assetObject):
 			obj,newName,remainingPath = exportAnimation(newCamera)
 			camDict = {"name":  "CAM","model": "%s/%s"%(remainingPath,newName.split('/')[-1]),"anim":"%s/%s"%(remainingPath,newName.split('/')[-1]),"profile":postProfile,"rimProfile":rimProfile}
 			sceneDict["cameras"].append(camDict)
+
+	#add lights
+	sunLight = cmds.optionMenu('sunSelection',q=True,v=True)
+	if sunLight == 'Use Default':
+		sunLight = ''
+	else:
+		x = cmds.getAttr('%s.rotateX'%sunLight)
+		y = cmds.getAttr('%s.rotateY'%sunLight)
+		z = cmds.getAttr('%s.rotateZ'%sunLight)
+		camDict = {"angle": {"x":x+180,"y":y,"z":z}}
+		sceneDict["lights"].append(camDict)
 
 	#export as alembic
 	abcPath = exportAsAlembic(filename.rsplit('/',1)[-1].split('.')[0])
@@ -489,6 +510,19 @@ def IoM_exportAnim_window():
 		cmds.optionMenu('rimSelection',v=preferedRimProfileName,e=True)
 	except:
 		pass
+	#Sun light 
+	sep_sunLight = cmds.separator("sep_sunLight",height=4, style='in' )
+	sunLabel = cmds.text('sunLabel',label='Sun Light',w=50,al='left')
+	directionalLights = findDirectionalLights()
+	directionalLights = ['Use Default'] + directionalLights
+	sunSelection = cmds.optionMenu('sunSelection')
+	for s in directionalLights:
+		cmds.menuItem(l=s)
+	preferedSunName = readFilePrefs('sunName')
+	try:
+		cmds.optionMenu('sunSelection',v=preferedSunName,e=True)
+	except:
+		pass
 	#Asset export
 	sep_assets = cmds.separator("sep_assets",height=4, style='in' )
 	assetsLabel = cmds.text('assetsLabel',label='Assets',w=40,al='left')
@@ -547,6 +581,10 @@ def IoM_exportAnim_window():
 		(cameraLabel,'left',10),
 		(sep_rimLight,'right',10),
 		(sep_rimLight,'left',10),
+		(sep_sunLight,'right',10),
+		(sep_sunLight,'left',10),
+		(sunLabel,'left',10),
+		(sunSelection,'right',10),
 		(rimLabel,'left',10),
 		(rimSelection,'right',10),
 		(sep_assets,'right',10),
@@ -579,7 +617,11 @@ def IoM_exportAnim_window():
 		(rimLabel,'top',20,sep_rimLight),
 		(rimSelection,'top',15,sep_rimLight),
 		(rimSelection,'left',30,rimLabel),
-		(sep_assets,'top',60,sep_rimLight),
+		(sep_sunLight,'top',60,sep_rimLight),
+		(sunLabel,'top',20,sep_sunLight),
+		(sunSelection,'top',15,sep_sunLight),
+		(sunSelection,'left',30,sunLabel),
+		(sep_assets,'top',60,sep_sunLight),
 		(assetsLabel,'top',20,sep_assets),
 		(boxLayout,'top',20,sep_assets),
 		(boxLayout,'left',40,cameraLabel),
