@@ -293,9 +293,11 @@ def copyUnityScene():
 def exportAnimation(obj):
 	#rename file temporarily
 	filename = cmds.file(q=True,sn=True)
-	objName = obj.split('|')[-1].split(':')[-1]
+	#objName = obj.split('|')[-1].split(':')[-1]
+	objName = obj.split('|')[-1]
+	objName = objName.replace(':','_')
 	newName = '%s_%s'%(filename.rsplit('.',1)[0],objName)
-	cmds.file(rename=newName)
+	print 'new name = %s'%newName
 	#move object to the root and redefine as itself if it's not already
 	try:
 		obj = cmds.parent(obj,w=True)[0]
@@ -344,7 +346,7 @@ def prepFile(assetObject):
 	startFrame = sceneVar.getStartFrame()
 	endFrame = sceneVar.getEndFrame()
 
-	#add objects to selection if if they are checked
+	#add objects to selection if they are checked
 	sel = []
 	checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
 	for i,c in enumerate(checkBoxes):
@@ -408,7 +410,7 @@ def prepFile(assetObject):
 		x = cmds.getAttr('%s.rotateX'%sunLight)
 		y = cmds.getAttr('%s.rotateY'%sunLight)
 		z = cmds.getAttr('%s.rotateZ'%sunLight)
-		camDict = {"angle": {"x":x+180,"y":y,"z":z}}
+		camDict = {"angle": {"x":x,"y":y,"z":z}}
 		sceneDict["lights"].append(camDict)
 
 	#export as alembic
