@@ -21,6 +21,17 @@
 			},
 			{
 				"icon":"separator"
+			},
+			{
+				"icon":"IoM_playblast.svg",
+				"label":"Quick Playblast",
+				"script":"IoM_playblast.py",
+				"modules": ["baseIO/__init__.py","baseIO/sceneVar.py","baseIO/getProj.py"],
+				"command":"import IoM_playblast;IoM_playblast.setupDisplay()",
+				"stp":"python"
+			},
+			{
+				"icon":"separator"
 			}
 		]
 	},
