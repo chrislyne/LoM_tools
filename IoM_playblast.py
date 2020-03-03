@@ -2,6 +2,27 @@ import maya.cmds as cmds
 import baseIO.getProj as getProj
 import datetime
 import socket
+import platform
+
+def setHud():
+	#set HUD with custom values
+	cmds.headsUpDisplay( rp=(5, 0) )
+	cmds.headsUpDisplay( rp=(6, 0) )
+	cmds.headsUpDisplay( rp=(9, 0) )
+	cmds.headsUpDisplay( rp=(8, 0) )
+	cmds.headsUpDisplay( 'HUDUser', s=5, b=0, ba='left', dw=50,dfs='large',command=hudUser,label="Machine:",lfs='large')
+	cmds.headsUpDisplay( 'HUDCameraName', s=9, b=0, ba='right', dw=50,dfs='large',command=hudFilename)
+	cmds.headsUpDisplay( 'HUDFrame', s=8, b=0, ba='right', dw=50,dfs='large',pre='currentFrame',label="Frame:",lfs='large')
+	cmds.headsUpDisplay( 'HUDTime', s=6, b=0, ba='left', dw=50,dfs='large',command=hudTime)
+
+def resetHud():
+	#set HUD back to how it was
+	cmds.headsUpDisplay( rp=(5, 0) )
+	cmds.headsUpDisplay( rp=(6, 0) )
+	cmds.headsUpDisplay( rp=(9, 0) )
+	cmds.headsUpDisplay( rp=(8, 0) )
+
+	cmds.headsUpDisplay( 'HUDViewAxis', s=5, b=0, ba='left', dw=50,dfs='large',pre='viewAxis')
 
 def hudUser():
 	hostname = socket.gethostname()
@@ -37,8 +58,13 @@ def doPlayblast():
 
 	filePath = '%s/Previs/%s/%s'%(Ep,Seq,filename)
 
+	if platform.system() == "Windows":
+		pbformat = 'qt'
+	else:
+		pbformat = 'avfoundation'
+
 	cmds.playblast(
-				format='qt',
+				format=pbformat,
 				filename='movies/%s'%filePath,
 				sequenceTime=0,
 				clearCache=1,
@@ -74,6 +100,10 @@ def setupDisplay():
 		cam = cmds.modelPanel (activePanel, query = True, camera = True)
 		renderCam = cmds.listRelatives(cam,type="camera")[0]
 		renderPanel = activePanel
+	except:
+		print "Must have active model panel"
+
+	if renderPanel:
 
 		stateDict = {"camera": [],"panel": []}
 		currentStateDict = {"camera": [],"panel": []}
@@ -105,34 +135,21 @@ def setupDisplay():
 				state = eval('cmds.modelEditor(\'%s\',q=True,%s=True)'%(renderPanel,k))
 				currentStateDict["panel"].append({k:  state})
 
+		#set viewport for playblasting
 		setCamera(stateDict,renderCam)
 		setPanel(stateDict,renderPanel)
-
-		cmds.headsUpDisplay( rp=(5, 0) )
-		cmds.headsUpDisplay( rp=(6, 0) )
-		cmds.headsUpDisplay( rp=(9, 0) )
-		cmds.headsUpDisplay( rp=(8, 0) )
-		cmds.headsUpDisplay( 'HUDUser', s=5, b=0, ba='left', dw=50,dfs='large',command=hudUser,label="Machine:",lfs='large')
-		cmds.headsUpDisplay( 'HUDCameraName', s=9, b=0, ba='right', dw=50,dfs='large',command=hudFilename)
-		cmds.headsUpDisplay( 'HUDFrame', s=8, b=0, ba='right', dw=50,dfs='large',pre='currentFrame',label="Frame:",lfs='large')
-		cmds.headsUpDisplay( 'HUDTime', s=6, b=0, ba='left', dw=50,dfs='large',command=hudTime)
+		setHud()
 
 		#do the playblast
-		doPlayblast()
-		print 'DO the playblast'
-		
+		try:
+			doPlayblast()
+		except Exception as e: 
+			print(e)
+
+		#set viewport state back
 		setCamera(currentStateDict,renderCam)
 		setPanel(currentStateDict,renderPanel)
-		cmds.headsUpDisplay( rp=(5, 0) )
-		cmds.headsUpDisplay( rp=(6, 0) )
-		cmds.headsUpDisplay( rp=(9, 0) )
-		cmds.headsUpDisplay( rp=(8, 0) )
-
-		cmds.headsUpDisplay( 'HUDViewAxis', s=5, b=0, ba='left', dw=50,dfs='large',pre='viewAxis')
-	except:
-		print "Must have active model panel"
-
-	
+		resetHud()
 
 #setupDisplay()
 

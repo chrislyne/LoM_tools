@@ -198,7 +198,7 @@ def AddIcons(shelfName,buttons):
 		try:
 			mi = buttons[i]['menuItem']
 			for i,l in enumerate(mi):
-				cmds.shelfButton(currentButton,edit=True,mi=(mi[i]['label'],mi[i]['command']))
+				cmds.shelfButton(currentButton,edit=True,mi=(mi[i]['label'],mi[i]['command']),mip=0)
 		except:
 			pass
 	

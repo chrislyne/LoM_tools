@@ -28,7 +28,17 @@
 				"script":"IoM_playblast.py",
 				"modules": ["baseIO/__init__.py","baseIO/sceneVar.py","baseIO/getProj.py"],
 				"command":"import IoM_playblast;IoM_playblast.setupDisplay()",
-				"stp":"python"
+				"stp":"python",
+				"menuItem":[
+					{
+						"label":"Playblast HUD",
+						"command":"import IoM_playblast;IoM_playblast.setHud()"
+					},
+					{
+						"label":"Reset HUD",
+						"command":"import IoM_playblast;IoM_playblast.resetHud()"
+					}
+				]
 			},
 			{
 				"icon":"separator"
