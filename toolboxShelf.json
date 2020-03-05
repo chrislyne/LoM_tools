@@ -12,7 +12,7 @@
 				"stp":"python"
 			},
 			{
-				"icon":["IoM_publishAnim.svg","IoM_error.svg"],
+				"icon":["IoM_publishAnim.svg","IoMError.svg"],
 				"label":"Publish Anim",
 				"script":"IoM_publishAnim.py",
 				"modules": ["baseIO/__init__.py","baseIO/sceneVar.py","baseIO/getProj.py"],
