@@ -11,6 +11,39 @@ import subprocess
 import tempfile
 import re
 
+def listFolders(path):
+	#get project folder
+	parentFolder,remainingPath = getParentFolder()
+	#add relative path to folder
+	pathName = '%s/%s'%(parentFolder,path)
+	#make list for legitmate files
+	fileNames = []
+	#read folder
+	if(os.path.isdir(pathName)):
+		files = os.listdir(pathName)
+		for f in files:
+			#filter out filetypes
+			if os.path.isdir('%s/%s'%(pathName,f)) and f[0] != '.':
+				fileNames.append(f)
+		#remove duplicates
+		fileNames = list(set(fileNames))
+	return fileNames
+
+def findPublishedAssets():
+	publishedAssets = []
+	allTransforms = cmds.ls(transforms=True,l=True)
+	assetFolders = listFolders('maya/scenes/Models')
+	for t in allTransforms:
+		t=t[1:]
+		if cmds.attributeQuery( 'publishName', node=t, exists=True):
+			fullRefPath = cmds.referenceQuery( t, filename=True )
+			parentFolder = fullRefPath.split('/')[-2]
+			correctFile = 0
+			if parentFolder in assetFolders:
+				correctFile = 1
+			publishedAssets.append({"transform":t,"correctFile":correctFile})
+	return publishedAssets
+
 def findDirectionalLights():
 	lightTransforms = []
 	lights = cmds.ls(type="directionalLight")
@@ -348,9 +381,11 @@ def prepFile(assetObject):
 
 	#add objects to selection if they are checked
 	sel = []
-	checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
-	for i,c in enumerate(checkBoxes):
-		if cmds.checkBox(c,v=True, q=True):
+	#checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
+	rows = cmds.columnLayout('boxLayout',ca=True,q=True)
+	for i,r in enumerate(rows):
+		checkBox = cmds.rowLayout(r,ca=True,q=True)[0]
+		if cmds.checkBox(checkBox,v=True, q=True):
 			sel.append(assetObject[i])
 
 	#start dictionary
@@ -475,12 +510,7 @@ def IoM_exportAnim_window():
 
 	#find all published objects by searching for the 'publishName' attribute
 
-	publishedAssets = []
-	allTransforms = cmds.ls(transforms=True,l=True)
-	for t in allTransforms:
-		t=t[1:]
-		if cmds.attributeQuery( 'publishName', node=t, exists=True):
-			publishedAssets.append(t)
+	publishedAssets = findPublishedAssets()
 
 	exportForm = cmds.formLayout()
 	#Camera selection
@@ -531,8 +561,13 @@ def IoM_exportAnim_window():
 	publishedAsset = []
 	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
 	for asset in publishedAssets:
-		publishedAsset.append(asset)
-		cmds.checkBox( label=asset.split(':')[-1], annotation=asset,v=True)
+		cmds.rowLayout(numberOfColumns=2)
+		publishedAsset.append(asset["transform"])
+		cmds.checkBox( label=asset["transform"], annotation=asset["transform"],v=asset["correctFile"])
+		if asset["correctFile"] == 0:
+			print 
+			cmds.iconTextButton( style='iconOnly', image1='IoMError.svg', label='spotlight',h=20,w=20,annotation='Incorrect file used' )
+		cmds.setParent( '..' )
 	cmds.setParent( '..' )
 	#Extras input
 	sep2 = cmds.separator("sep2",height=4, style='in' )

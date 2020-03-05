@@ -10,10 +10,15 @@ def setHud():
 	cmds.headsUpDisplay( rp=(6, 0) )
 	cmds.headsUpDisplay( rp=(9, 0) )
 	cmds.headsUpDisplay( rp=(8, 0) )
+	cmds.headsUpDisplay( rp=(7, 0) )
+	cmds.headsUpDisplay( rp=(7, 1) )
 	cmds.headsUpDisplay( 'HUDUser', s=5, b=0, ba='left', dw=50,dfs='large',command=hudUser,label="Machine:",lfs='large')
 	cmds.headsUpDisplay( 'HUDCameraName', s=9, b=0, ba='right', dw=50,dfs='large',command=hudFilename)
 	cmds.headsUpDisplay( 'HUDFrame', s=8, b=0, ba='right', dw=50,dfs='large',pre='currentFrame',label="Frame:",lfs='large')
+	cmds.headsUpDisplay( 'HUDTimecode', s=8, b=1, ba='left', dw=50,dfs='large',pre='sceneTimecode')
 	cmds.headsUpDisplay( 'HUDTime', s=6, b=0, ba='left', dw=50,dfs='large',command=hudTime)
+	cmds.headsUpDisplay( 'HUDCamera2', s=7, b=1, ba='center',dfs='large',pre='cameraNames')
+	cmds.headsUpDisplay( 'HUDLens', s=7, b=0, ba='center',dfs='large',command=hudCamera,l="Lens:",lfs='large')
 
 def resetHud():
 	#set HUD back to how it was
@@ -21,8 +26,26 @@ def resetHud():
 	cmds.headsUpDisplay( rp=(6, 0) )
 	cmds.headsUpDisplay( rp=(9, 0) )
 	cmds.headsUpDisplay( rp=(8, 0) )
+	cmds.headsUpDisplay( rp=(8, 1) )
+	cmds.headsUpDisplay( rp=(7, 0) )
+	cmds.headsUpDisplay( rp=(7, 1) )
 
 	cmds.headsUpDisplay( 'HUDViewAxis', s=5, b=0, ba='left', dw=50,dfs='large',pre='viewAxis')
+	cmds.headsUpDisplay( 'HUDCamera', s=7, b=0, ba='center',pre='cameraNames')
+
+def hudCamera():
+	renderCam = ''
+	renderPanel = ''
+	activePanel = cmds.getPanel (withFocus = True)
+	lens = ""
+	try:
+		cam = cmds.modelPanel (activePanel, query = True, camera = True)
+		renderCam = cmds.listRelatives(cam,type="camera")[0]
+		lens = cmds.getAttr('%s.focalLength'%renderCam)
+		lens = '%s mm'%lens
+	except:
+		pass
+	return lens
 
 def hudUser():
 	hostname = socket.gethostname()
@@ -73,7 +96,8 @@ def doPlayblast():
 				percent=100,
 				compression="H.264",
 				quality=80,
-				widthHeight=[1920,1080]
+				widthHeight=[1920,1080],
+				offScreen=True
 				)
 
 def setPanel(currentStateDict,renderPanel):

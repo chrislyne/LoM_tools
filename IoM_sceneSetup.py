@@ -163,11 +163,13 @@ def IoM_sceneSetup_window():
 				])
 	
 
-def IoM_sceneSetup():
+def IoM_setup():
 
 	workspaceName = 'Scene Setup'
 	if(cmds.workspaceControl(workspaceName, exists=True)):
 		cmds.deleteUI(workspaceName)
 	cmds.workspaceControl(workspaceName,initialHeight=100,initialWidth=300,uiScript = 'IoM_sceneSetup_window()')
 
-IoM_sceneSetup()
+#IoM_setup()
+
+#import IoM_sceneSetup;from IoM_sceneSetup import *;IoM_setup()
