@@ -11,6 +11,32 @@ import subprocess
 import tempfile
 import re
 
+def fixRef(asset,errorButton):
+
+	#get full path to incorrectly referenced file
+	fullRefPath = cmds.referenceQuery( asset, filename=True )
+
+	publishName = ''
+	#try and get name from top transform publish attribute
+	if cmds.attributeQuery('publishName',n=asset,exists=True):
+		publishName = cmds.getAttr('%s.publishName'%asset)
+	else:
+		#try and get the name from the start of the incorrect filename
+		publishName = '%s_REF'%fullRefPath.split('/')[-1].split('_')[0]
+	
+	#find ref node
+	refNode = cmds.referenceQuery( asset, referenceNode=True )
+	parentFolder = 'scenes/Models/%s'%fullRefPath.split('/')[-3]
+	projPath = getProj.getProject()
+	#check assumed path exists
+	checkExistsPath = '%s%s/%s.ma'%(projPath,parentFolder,publishName)
+	newPath = '%s/%s.ma'%(parentFolder,publishName)
+	if os.path.isfile(checkExistsPath):
+		#set new path 
+		cmds.file(newPath, loadReference = refNode)
+		#hide button
+		cmds.iconTextButton(errorButton,e=True,vis=False)
+
 def listFolders(path):
 	#get project folder
 	parentFolder,remainingPath = getParentFolder()
@@ -559,14 +585,25 @@ def IoM_exportAnim_window():
 	sep_assets = cmds.separator("sep_assets",height=4, style='in' )
 	assetsLabel = cmds.text('assetsLabel',label='Assets',w=40,al='left')
 	publishedAsset = []
+	#check for duplicates
+	assetNames = []
+	duplicates = False
+	for asset in publishedAssets:
+		assetNames.append(asset["transform"].split(':')[-1])
+	if len(assetNames) != len(set(assetNames)):
+		duplicates = True
 	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
 	for asset in publishedAssets:
 		cmds.rowLayout(numberOfColumns=2)
 		publishedAsset.append(asset["transform"])
-		cmds.checkBox( label=asset["transform"], annotation=asset["transform"],v=asset["correctFile"])
+		if duplicates == False:
+			cmds.checkBox( label=asset["transform"].split(':')[-1], annotation=asset["transform"],v=asset["correctFile"])
+		else:
+			cmds.checkBox( label=asset["transform"], annotation=asset["transform"],v=asset["correctFile"])
 		if asset["correctFile"] == 0:
-			print 
-			cmds.iconTextButton( style='iconOnly', image1='IoMError.svg', label='spotlight',h=20,w=20,annotation='Incorrect file used' )
+			#make button to show wrong REF
+			errorButton = cmds.iconTextButton( style='iconOnly', image1='IoMError.svg', label='spotlight',h=20,w=20,annotation='Incorrect file used' )
+			cmds.iconTextButton(errorButton,e=True,c='fixRef(\"%s\",\"%s\")'%(asset["transform"],errorButton))
 		cmds.setParent( '..' )
 	cmds.setParent( '..' )
 	#Extras input
