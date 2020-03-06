@@ -29,6 +29,16 @@ def referenceAssets(assetType,assetDict):
 			for topNode in parentNames:
 				cmds.parent(topNode,grp)
 
+def doSetup():
+	#set resolution
+	cmds.setAttr("defaultResolution.width",1920)
+	cmds.setAttr("defaultResolution.height",1080)
+	cmds.currentUnit(time="pal")
+	#set clipping plane on perspective camera
+	cmds.setAttr("perspShape.nearClipPlane", 10)
+	cmds.setAttr("perspShape.farClipPlane", 100000)
+
+
 def addCamera():
 	print 'add camera'
 	newCam = cmds.camera(n='RENDER_CAM')
@@ -110,12 +120,20 @@ def findAssets():
 
 ###		UI		###
 def IoM_sceneSetup_window():
+	#add ScriptNode to scene
+	scrptNode = cmds.createNode("script", n='IoMScriptNode',s=True)
+	if scrptNode:
+		cmds.setAttr ("%s.scriptType"%scrptNode,1)
+		cmds.setAttr ("%s.sourceType"%scrptNode,1)
+		cmds.setAttr ("%s.after"%scrptNode,"import IoM_savePreset;IoM_savePreset.makePreset()",type="string")
 
 	assetDict = findAssets()
 	importForm = cmds.formLayout()
 
 	colLayout = cmds.columnLayout('colLayout',cat=("both",0),adjustableColumn=True)
 	setupLabel = cmds.text('setupLabel',label='Scene Setup',w=40,al='left',fn="boldLabelFont",h=20)
+	setupButton = cmds.button('setupButton',l='Scene Setup',h=50,c='doSetup()')
+	cmds.separator(height=20, style='in' )
 	staticButtonForm = cmds.formLayout()
 	camButton = cmds.button('camButton',l='Add Camera',h=50,c='addCamera()')
 	sunButton = cmds.button('sunButton',l='Add Sun',h=50,c='addSun()')

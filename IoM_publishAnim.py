@@ -295,8 +295,12 @@ def exportAsAlembic(abcFilename):
 			except: cmds.error('Could not load AbcExport plugin')
 		#write to disk
 		cmds.AbcExport ( j=command )
-
+		#copy file from temp folder to project
 		copyfile(abcTempPath, abcExportPath)
+		#export fbx for materials
+		cmds.select(sel,r=True)
+		print abcExportPath
+		cmds.file(abcExportPath.replace('.abc','_mat.fbx'),force=True,type='FBX export',es=True)
 
 		returnString = "%s/%s_cache"%(remainingPath,abcFilename)
 	
@@ -478,7 +482,7 @@ def prepFile(assetObject):
 	abcPath = exportAsAlembic(filename.rsplit('/',1)[-1].split('.')[0])
 
 	if len(abcPath) > 0:
-		extraDict = {"name":  "extras","abc": abcPath}
+		extraDict = {"name":  "extras","abc": abcPath,"material": '%s_mat'%abcPath}
 		sceneDict["extras"].append(extraDict)
 
 	#Add Sets to dictionary
@@ -507,10 +511,17 @@ def prepFile(assetObject):
 
 #list cameras
 def listAllCameras():
+	cameraTransforms = []
 	listAllCameras = cmds.listCameras(p=True)
 	#remove 'persp' camera
 	if 'persp' in listAllCameras: listAllCameras.remove('persp')
-	return listAllCameras
+	for c in listAllCameras:
+		if cmds.objectType(c) == "camera":
+			cp = cmds.listRelatives(c,p=True)[0]
+			cameraTransforms.append(cp)
+		else:
+			cameraTransforms.append(c)
+	return cameraTransforms
 
 def addObjectsToScrollList():
 	#list selected objects
