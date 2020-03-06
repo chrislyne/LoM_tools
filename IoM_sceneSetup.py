@@ -121,11 +121,11 @@ def findAssets():
 ###		UI		###
 def IoM_sceneSetup_window():
 	#add ScriptNode to scene
-	scrptNode = cmds.createNode("script", n='IoMScriptNode',s=True)
-	if scrptNode:
-		cmds.setAttr ("%s.scriptType"%scrptNode,1)
-		cmds.setAttr ("%s.sourceType"%scrptNode,1)
-		cmds.setAttr ("%s.after"%scrptNode,"import IoM_savePreset;IoM_savePreset.makePreset()",type="string")
+	#scrptNode = cmds.createNode("script", n='IoMScriptNode',s=True)
+	#if scrptNode:
+	#	cmds.setAttr ("%s.scriptType"%scrptNode,1)
+	#	cmds.setAttr ("%s.sourceType"%scrptNode,1)
+	#	cmds.setAttr ("%s.after"%scrptNode,"import IoM_savePreset;IoM_savePreset.makePreset()",type="string")
 
 	assetDict = findAssets()
 	importForm = cmds.formLayout()
