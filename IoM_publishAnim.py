@@ -95,6 +95,9 @@ def parentNewCamera(oldCamera):
 	atttributes = ['focalLength']
 	for a in atttributes:
 		cmds.connectAttr('%s.%s'%(oldCamera[1],a),'%s.%s'%(newCamera[1],a))
+	#set extra attributes
+	cmds.setAttr('%s.nearClipPlane'%newCamera[1],10)
+	cmds.setAttr('%s.farClipPlane'%newCamera[1],100000)
 	#return new transform and shape as list
 	return newCamera
 
@@ -339,9 +342,9 @@ def copyUnityScene():
 			#get path to Unity from text field
 			unityEditorPath = cmds.textFieldButtonGrp('unityPath',q=True,tx=True)
 			if platform.system() == "Windows":
-				subprocess.check_output('\"%s/%s/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityEditorPath,unityVersion,projectPath,shotName,scenePath))
+				subprocess.Popen('\"%s/%s/Editor/Unity.exe\" -quit -batchmode -projectPath \"%s\" -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityEditorPath,unityVersion,projectPath,shotName,scenePath),shell=True)
 			else:
-				subprocess.check_output('%s/%s/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityEditorPath,unityVersion,projectPath,shotName,scenePath),shell=True)
+				subprocess.Popen('%s/%s/Unity.app/Contents/MacOS/Unity -quit -batchmode -projectPath %s -executeMethod BuildSceneBatch.PerformBuild -shotName \"%s\" -scenePath \"%s\" '%(unityEditorPath,unityVersion,projectPath,shotName,scenePath),shell=True)
 		except:
 			print "Unable to populate Unity scene file"
 			#copy blank Unity scene if auto population fails
@@ -411,19 +414,21 @@ def prepFile(assetObject):
 
 	#add objects to selection if they are checked
 	sel = []
+	deformationSystems = []
 	#checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
 	rows = cmds.columnLayout('boxLayout',ca=True,q=True)
 	for i,r in enumerate(rows):
 		checkBox = cmds.rowLayout(r,ca=True,q=True)[0]
 		if cmds.checkBox(checkBox,v=True, q=True):
 			sel.append(assetObject[i])
+			deformationSystems.append('%s|*:DeformationSystem'%assetObject[i])
 
 	#start dictionary
 	sceneDict = {"cameras": [],"characters": [],"extras": [],"sets": [],"lights": []}
 
 	if sel:
 		#bake keys
-		cmds.bakeResults(sel,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
+		cmds.bakeResults(deformationSystems,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
 
 		#export animation one object at a time
 		for obj in sel:
