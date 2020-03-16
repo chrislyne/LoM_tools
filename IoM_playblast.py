@@ -3,6 +3,7 @@ import baseIO.getProj as getProj
 import datetime
 import socket
 import platform
+import maya.mel
 
 def setHud():
 	#set HUD with custom values
@@ -86,8 +87,13 @@ def doPlayblast():
 	else:
 		pbformat = 'avfoundation'
 
+	#get sound 
+	aPlayBackSliderPython = maya.mel.eval('$tmpVar=$gPlayBackSlider')
+	timelineSound = cmds.timeControl( aPlayBackSliderPython, q=True, sound=True )
+
 	cmds.playblast(
 				format=pbformat,
+				sound=timelineSound,
 				filename='movies/%s'%filePath,
 				sequenceTime=0,
 				clearCache=1,
