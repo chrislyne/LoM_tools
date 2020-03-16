@@ -128,6 +128,8 @@ def makeRef(refName,publishString):
 		backupName = '%s/%s%d'%(backupFolder,refFileName,count)
 		copyfile(pathName, backupName)
 	#export .mb REF
+	if cmds.objExists('Sets'):
+		cmds.select('Sets',add=True,ne=True)
 	cmds.file(pathName,force=True,type='mayaAscii',pr=True,es=True)
 	#log
 	logOutput = []
