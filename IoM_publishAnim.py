@@ -289,7 +289,7 @@ def exportAsAlembic(abcFilename):
 		#export .abc
 		abcExportPath = '%s/%s_cache.abc'%(folderPath,abcFilename)
 		abcTempPath = '%s/%s_cache.abc'%(tempfile.gettempdir().replace('\\','/'),abcFilename)
-		command = '-frameRange %d %d -uvWrite -writeVisibility -wholeFrameGeo -worldSpace -writeUVSets -dataFormat ogawa%s -file \"%s\"'%(startFrame,endFrame,exportString,abcTempPath)
+		command = '-frameRange %d %d -uvWrite -writeColorSets -writeFaceSets -writeVisibility -wholeFrameGeo -worldSpace -writeUVSets -dataFormat ogawa%s -file \"%s\"'%(startFrame,endFrame,exportString,abcTempPath)
 		#load plugin
 		if not cmds.pluginInfo('AbcExport',query=True,loaded=True):
 			try:
