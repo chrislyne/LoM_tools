@@ -415,40 +415,42 @@ def prepFile(assetObject):
 	#add objects to selection if they are checked
 	sel = []
 	deformationSystems = []
-	#checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
-	rows = cmds.columnLayout('boxLayout',ca=True,q=True)
-	for i,r in enumerate(rows):
-		checkBox = cmds.rowLayout(r,ca=True,q=True)[0]
-		if cmds.checkBox(checkBox,v=True, q=True):
-			sel.append(assetObject[i])
-			deformationSystems.append('%s|*:DeformationSystem'%assetObject[i])
-
 	#start dictionary
 	sceneDict = {"cameras": [],"characters": [],"extras": [],"sets": [],"lights": []}
+	#checkBoxes = cmds.columnLayout('boxLayout',ca=True,q=True)
+	rows = cmds.columnLayout('boxLayout',ca=True,q=True)
+	if rows:
+		for i,r in enumerate(rows):
+			checkBox = cmds.rowLayout(r,ca=True,q=True)[0]
+			if cmds.checkBox(checkBox,v=True, q=True):
+				sel.append(assetObject[i])
+				deformationSystems.append('%s|*:DeformationSystem'%assetObject[i])
 
-	if sel:
-		#bake keys
-		cmds.bakeResults(deformationSystems,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
+		
 
-		#export animation one object at a time
-		for obj in sel:
-			#do the export
-			obj,newName,remainingPath = exportAnimation(obj)
-			#make character dictionary
-			try:
-				#get REF filename
-				publishName = cmds.getAttr('%s.publishName'%obj)
-				#get asset type from parent folder
-				refPath = cmds.referenceQuery( obj,filename=True )
-				assetType = os.path.split(os.path.dirname(refPath))[1]
-				publishName = "%s/%s"%(assetType,publishName)
-			except:
-				#make a name if publishName attribute doesn't exist
-				publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
-			#format json
-			displayName = re.split('\d+', newName)[-1][1:]
-			charDict = {"name":  displayName,"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
-			sceneDict["characters"].append(charDict)
+		if sel:
+			#bake keys
+			cmds.bakeResults(deformationSystems,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
+
+			#export animation one object at a time
+			for obj in sel:
+				#do the export
+				obj,newName,remainingPath = exportAnimation(obj)
+				#make character dictionary
+				try:
+					#get REF filename
+					publishName = cmds.getAttr('%s.publishName'%obj)
+					#get asset type from parent folder
+					refPath = cmds.referenceQuery( obj,filename=True )
+					assetType = os.path.split(os.path.dirname(refPath))[1]
+					publishName = "%s/%s"%(assetType,publishName)
+				except:
+					#make a name if publishName attribute doesn't exist
+					publishName = "%s/%s"%(remainingPath,newName.split('/')[-1])
+				#format json
+				displayName = re.split('\d+', newName)[-1][1:]
+				charDict = {"name":  displayName,"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
+				sceneDict["characters"].append(charDict)
 
 	#add camera
 	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
