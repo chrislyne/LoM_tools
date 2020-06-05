@@ -92,10 +92,12 @@ def parentNewCamera(oldCamera):
 	#constrain new camera to old camera
 	cmds.parentConstraint(oldCamera[0],newCamera[0])
 	#copy camera attributes
-	atttributes = ['focalLength','filmFit']
+	atttributes = ['focalLength']
 	for a in atttributes:
 		cmds.connectAttr('%s.%s'%(oldCamera[1],a),'%s.%s'%(newCamera[1],a))
 	#set extra attributes
+	filmFit = cmds.getAttr('%s.filmFit'%oldCamera[1])
+	cmds.setAttr('%s.filmFit'%newCamera[1],filmFit)
 	cmds.setAttr('%s.nearClipPlane'%newCamera[1],10)
 	cmds.setAttr('%s.farClipPlane'%newCamera[1],100000)
 	#return new transform and shape as list
