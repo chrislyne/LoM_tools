@@ -81,6 +81,7 @@ def listFiles(path,filetype):
 				fileNames.append(f.split('.')[0])
 		#remove duplicates
 		fileNames = list(set(fileNames))
+	fileNames.sort()
 	return fileNames
 
 def listFolders(path):

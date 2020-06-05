@@ -92,7 +92,7 @@ def parentNewCamera(oldCamera):
 	#constrain new camera to old camera
 	cmds.parentConstraint(oldCamera[0],newCamera[0])
 	#copy camera attributes
-	atttributes = ['focalLength']
+	atttributes = ['focalLength','filmFit']
 	for a in atttributes:
 		cmds.connectAttr('%s.%s'%(oldCamera[1],a),'%s.%s'%(newCamera[1],a))
 	#set extra attributes

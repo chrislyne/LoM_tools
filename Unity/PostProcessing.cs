@@ -25,7 +25,8 @@ public class PostProcessing : EditorWindow
             cam.layer = LayerMask.NameToLayer("Post-Processing");
             PostProcessLayer ppl = cam.AddComponent<PostProcessLayer>();
 
-            ppl.antialiasingMode = PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
+            ppl.antialiasingMode = PostProcessLayer.Antialiasing.TemporalAntialiasing;
+            //ppl.antialiasingMode = PostProcessLayer.Antialiasing.FastApproximateAntialiasing;
             ppl.volumeLayer = 1 << LayerMask.NameToLayer("Post-Processing");
             PostProcessVolume ppv = cam.AddComponent<PostProcessVolume>();
             ppv.isGlobal = true;
