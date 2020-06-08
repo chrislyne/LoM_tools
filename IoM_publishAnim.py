@@ -508,6 +508,19 @@ def prepFile(assetObject):
 	with open(pathName, mode='w') as feedsjson:
 		json.dump(sceneDict, feedsjson, indent=4, sort_keys=True)
 
+	#copy post profile file
+	if postProfile == '': #if no post profile is selected
+		postProfile = 'Profiles/%s_PostProfile'%(setName) #set it as the set name
+	if postProfile: #make sure the post process is set
+		try:
+			postProfileTemplate = '%s/Unity/Assets/Resources/%s.asset'%(parentFolder,postProfile) #path to template post process file
+			postProfileShot = '%s/Unity/Assets/Resources/Profiles/shotSpecific/%s.asset'%(parentFolder,filename.rsplit('/',1)[-1].split('.')[0]) #path to new post process file
+			copyfile(postProfileTemplate, postProfileShot) #copy the file
+		except:
+			pass
+
+
+
 	
 	#revert to pre baked file
 	try:
