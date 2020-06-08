@@ -458,10 +458,22 @@ def prepFile(assetObject):
 	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
 	postProfile = cmds.optionMenu('postProfileSelection',q=True,v=True)
 	rimProfile = cmds.optionMenu('rimSelection',q=True,v=True)
+	setName = cmds.optionMenu('setSelection',q=True,v=True)
 	if postProfile == 'No Profile':
-		postProfile = ''
+		postProfile = 'Profiles/%s_PostProfile'%(setName) #set it as the set name
+		try:
+			postProfileTemplate = '%s/Unity/Assets/Resources/%s.asset'%(parentFolder,postProfile) #path to template post process file
+			postProfileShot = '%s/Unity/Assets/Resources/Profiles/shotSpecific/%s.asset'%(parentFolder,filename.rsplit('/',1)[-1].split('.')[0]) #path to new post process file
+			copyfile(postProfileTemplate, postProfileShot) #copy the file
+		except:
+			postProfile = ''
 	else:
 		postProfile = 'Profiles/%s'%postProfile
+	#copy post profile file
+	if postProfile == '': #if no post profile is selected
+		postProfile = 'Profiles/%s_PostProfile'%(setName) #set it as the set name
+
+
 	if rimProfile == 'No Profile':
 		rimProfile = ''
 	else:
@@ -500,6 +512,14 @@ def prepFile(assetObject):
 		if len(setName) > 0:
 			setDict = {"name":  setName,"model": 'Sets/%s'%setName}
 			sceneDict["sets"].append(setDict)
+	#read set json file
+	#setProfiles = '%s/Unity/Assets/Resources/Sets/%s.json'%(parentFolder,setName)
+	#with open(setProfiles) as jsonSetData:
+	#	setData = json.load(jsonSetData)
+	#	jsonSetData.close()
+	#	print setData["rimlight"]
+	#	print setData["postProfile"]
+
 
 	#write json file
 	jsonFileName  = ('%s.json'%(filename.rsplit('/',1)[-1].split('.')[0]))
@@ -508,16 +528,7 @@ def prepFile(assetObject):
 	with open(pathName, mode='w') as feedsjson:
 		json.dump(sceneDict, feedsjson, indent=4, sort_keys=True)
 
-	#copy post profile file
-	if postProfile == '': #if no post profile is selected
-		postProfile = 'Profiles/%s_PostProfile'%(setName) #set it as the set name
-	if postProfile: #make sure the post process is set
-		try:
-			postProfileTemplate = '%s/Unity/Assets/Resources/%s.asset'%(parentFolder,postProfile) #path to template post process file
-			postProfileShot = '%s/Unity/Assets/Resources/Profiles/shotSpecific/%s.asset'%(parentFolder,filename.rsplit('/',1)[-1].split('.')[0]) #path to new post process file
-			copyfile(postProfileTemplate, postProfileShot) #copy the file
-		except:
-			pass
+	
 
 
 
