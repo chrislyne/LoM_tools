@@ -665,6 +665,7 @@ def IoM_exportAnim_window():
 	setLabel = cmds.text('setLabel',label='Set',w=40,al='left')
 	setCheck = cmds.checkBox('setCheck',l="",annotation="Include Set",v=True,cc='disableMenu(\'setCheck\',[\'setSelection\'],[])')
 	sets = listFiles('/Unity/Assets/Resources/Sets','prefab')
+	sets = sorted(sets) #sort alphabetaclly 
 	setSelection = cmds.optionMenu('setSelection')
 	for s in sets:
 		cmds.menuItem(l=s)
