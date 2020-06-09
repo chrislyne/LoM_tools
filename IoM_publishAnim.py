@@ -410,6 +410,8 @@ def prepFile(assetObject):
 	createFilePrefs()
 	filename = cmds.file(save=True)
 
+	parentFolder,remainingPath = getParentFolder()
+
 	#get start and end frame
 	startFrame = sceneVar.getStartFrame()
 	endFrame = sceneVar.getEndFrame()
@@ -513,17 +515,21 @@ def prepFile(assetObject):
 			setDict = {"name":  setName,"model": 'Sets/%s'%setName}
 			sceneDict["sets"].append(setDict)
 	#read set json file
-	#setProfiles = '%s/Unity/Assets/Resources/Sets/%s.json'%(parentFolder,setName)
-	#with open(setProfiles) as jsonSetData:
-	#	setData = json.load(jsonSetData)
-	#	jsonSetData.close()
-	#	print setData["rimlight"]
-	#	print setData["postProfile"]
+	parentFolder,remainingPath = getParentFolder()
+	setProfiles = '%s/Unity/Assets/Resources/Sets/%s.json'%(parentFolder,setName)
+	#try:
+	#	with open(setProfiles) as jsonSetData:
+	#		setData = json.load(jsonSetData)
+	#		jsonSetData.close()
+	#		print setData["rimlight"]
+	#		print setData["postProfile"]
+	#except:
+	#	pass
 
 
 	#write json file
 	jsonFileName  = ('%s.json'%(filename.rsplit('/',1)[-1].split('.')[0]))
-	parentFolder,remainingPath = getParentFolder()
+	
 	pathName = '%s/Unity/Assets/Resources/json/%s'%(parentFolder,jsonFileName)
 	with open(pathName, mode='w') as feedsjson:
 		json.dump(sceneDict, feedsjson, indent=4, sort_keys=True)
