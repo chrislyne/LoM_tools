@@ -430,8 +430,6 @@ def prepFile(assetObject):
 				sel.append(assetObject[i])
 				deformationSystems.append('%s|*:DeformationSystem'%assetObject[i])
 
-		
-
 		if sel:
 			#bake keys
 			cmds.bakeResults(deformationSystems,simulation=True,t=(startFrame,endFrame),hierarchy='below',sampleBy=1,oversamplingRate=1,disableImplicitControl=True,preserveOutsideKeys=True,sparseAnimCurveBake=False,removeBakedAttributeFromLayer=False,removeBakedAnimFromLayer=False,bakeOnOverrideLayer=False,minimizeRotation=True,controlPoints=False,shape=True)
@@ -456,26 +454,26 @@ def prepFile(assetObject):
 				charDict = {"name":  displayName,"model": publishName,"anim": "%s/%s"%(remainingPath,newName.split('/')[-1])}
 				sceneDict["characters"].append(charDict)
 
-	#add camera
+	#add camera and post profile
 	cameraName = cmds.optionMenu('cameraSelection',q=True,v=True)
 	postProfile = cmds.optionMenu('postProfileSelection',q=True,v=True)
-	rimProfile = cmds.optionMenu('rimSelection',q=True,v=True)
+	print 'From selection %s'%postProfile
 	setName = cmds.optionMenu('setSelection',q=True,v=True)
+	if postProfile == 'From Set': #if no post profile is selected
+		postProfile = '%s_PostProfile'%(setName) #set it as the set name
 	if postProfile == 'No Profile':
-		postProfile = 'Profiles/%s_PostProfile'%(setName) #set it as the set name
-		try:
+		postProfile = '' #no profile should be used
+	else:
+		postProfile = 'Profiles/%s'%postProfile #post profile is from ui
+	if postProfile:
+		try: #copy post profile file
 			postProfileTemplate = '%s/Unity/Assets/Resources/%s.asset'%(parentFolder,postProfile) #path to template post process file
 			postProfileShot = '%s/Unity/Assets/Resources/Profiles/shotSpecific/%s.asset'%(parentFolder,filename.rsplit('/',1)[-1].split('.')[0]) #path to new post process file
 			copyfile(postProfileTemplate, postProfileShot) #copy the file
 		except:
-			postProfile = ''
-	else:
-		postProfile = 'Profiles/%s'%postProfile
-	#copy post profile file
-	if postProfile == '': #if no post profile is selected
-		postProfile = 'Profiles/%s_PostProfile'%(setName) #set it as the set name
+			pass
 
-
+	rimProfile = cmds.optionMenu('rimSelection',q=True,v=True) #get selected rim profile from ui
 	if rimProfile == 'No Profile':
 		rimProfile = ''
 	else:
@@ -596,7 +594,7 @@ def IoM_exportAnim_window():
 	for cam in allCameras:
 		cmds.menuItem(l=cam)
 	profiles = listFiles('/Unity/Assets/Resources/Profiles','asset')
-	profiles = ['No Profile'] + profiles
+	profiles = ['From Set','No Profile'] + profiles
 	postProfileSelection = cmds.optionMenu('postProfileSelection')
 	for p in profiles:
 		cmds.menuItem(l=p)
