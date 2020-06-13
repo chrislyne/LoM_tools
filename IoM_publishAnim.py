@@ -60,13 +60,13 @@ def findPublishedAssets():
 	allTransforms = cmds.ls(transforms=True,l=True)
 	assetFolders = listFolders('maya/scenes/Models')
 	for t in allTransforms:
-		t=t[1:]
 		if cmds.attributeQuery( 'publishName', node=t, exists=True):
 			fullRefPath = cmds.referenceQuery( t, filename=True )
 			parentFolder = fullRefPath.split('/')[-2]
 			correctFile = 0
 			if parentFolder in assetFolders:
 				correctFile = 1
+			t=t[1:]
 			publishedAssets.append({"transform":t,"correctFile":correctFile})
 	return publishedAssets
 
