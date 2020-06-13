@@ -11,6 +11,9 @@ import subprocess
 import tempfile
 import re
 
+def selRef(asset):
+	cmds.select(asset,r=True)
+
 def fixRef(asset,errorButton):
 
 	#get full path to incorrectly referenced file
@@ -640,14 +643,15 @@ def IoM_exportAnim_window():
 		assetNames.append(asset["transform"].split(':')[-1])
 	if len(assetNames) != len(set(assetNames)):
 		duplicates = True
-	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=250 )
+	boxLayout = cmds.columnLayout('boxLayout',columnAttach=('both', 5), rowSpacing=10, columnWidth=350 )
 	for asset in publishedAssets:
 		cmds.rowLayout(numberOfColumns=2)
 		publishedAsset.append(asset["transform"])
 		if duplicates == False:
-			cmds.checkBox( label=asset["transform"].split(':')[-1], annotation=asset["transform"],v=asset["correctFile"])
+			cmds.checkBox(label=asset["transform"].split(':')[-1], annotation=asset["transform"],v=asset["correctFile"],onCommand='selRef(\"%s\")'%asset["transform"])
 		else:
-			cmds.checkBox( label=asset["transform"], annotation=asset["transform"],v=asset["correctFile"])
+			cmds.checkBox(label=asset["transform"], annotation=asset["transform"],v=asset["correctFile"],onCommand='selRef(\"%s\")'%asset["transform"])
+
 		if asset["correctFile"] == 0:
 			#make button to show wrong REF
 			errorButton = cmds.iconTextButton( style='iconOnly', image1='IoMError.svg', label='spotlight',h=20,w=20,annotation='Incorrect file used' )
